@@ -16,6 +16,10 @@ const multer = require("multer");
 const generateMPDandUpload = require("./transcoder");
 const upload = multer({ storage: multer.memoryStorage() });
 
+app.get("/test", () => {
+  res.status(200).json("okay to go");
+});
+
 app.post(
   "/transcode",
   upload.fields([{ name: "video", maxCount: 1 }]),
