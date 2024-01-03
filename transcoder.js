@@ -27,6 +27,8 @@ const transcodeAndGenerateMpd = async (temporaryFilePath) => {
 
     const outputManifest = "output/output.mpd";
 
+    // Check if the output folder exists, if not, create it
+
     const videoInfo = await getVideoInfo(temporaryFilePath);
 
     const { height, width, framerate, videoBitrateKbps, codec_name } =
@@ -264,10 +266,17 @@ const generateMPDandUpload = async (req, res) => {
   const temporaryFilePath = path.join(os.tmpdir(), videoFile.originalname);
   fs.writeFileSync(temporaryFilePath, videoFile.buffer);
 
+  const scriptDirectory = __dirname;
+  // Construct the path to the "output" folder
+  const outputFolder = path.join(scriptDirectory, "output");
+
+  fs.mkdirSync(outputFolder, { recursive: true });
+
   try {
     await transcodeAndGenerateMpd(temporaryFilePath);
     await uploadChunks(title);
     res.status(200).json("video uploaded to aws s3 bucket successfully");
+    fs.rmdir(outputFolder, { recursive: true });
   } catch (error) {
     res.status(500).json("error when transcoding", error);
   }
