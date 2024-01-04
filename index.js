@@ -16,7 +16,7 @@ const multer = require("multer");
 const generateMPDandUpload = require("./transcoder");
 const upload = multer({ storage: multer.memoryStorage() });
 
-app.get("/test", () => {
+app.get("/test", (req, res) => {
   res.status(200).json("okay to go");
 });
 
