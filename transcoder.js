@@ -275,8 +275,9 @@ const generateMPDandUpload = async (req, res) => {
   try {
     await transcodeAndGenerateMpd(temporaryFilePath);
     await uploadChunks(title);
+    fs.rmdirSync(outputFolder, { recursive: true });
+
     res.status(200).json("video uploaded to aws s3 bucket successfully");
-    fs.rmdir(outputFolder, { recursive: true });
   } catch (error) {
     res.status(500).json("error when transcoding", error);
   }
