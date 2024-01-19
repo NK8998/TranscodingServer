@@ -63,7 +63,7 @@ const transcodeAndGenerateMpd = async (temporaryFilePath) => {
       if (videoBitrateKbps) {
         if (index === 0) {
           // Update the bitrate for the first resolution
-          return { ...resolution, bitrate: videoBitrateKbps };
+          return { ...resolution, bitrate: videoBitrateKbps > resolution.bitrate ? resolution.bitrate : videoBitrateKbps };
         } else {
           const calculatedBitrate = parseInt(
             (videoBitrateKbps - index * (videoBitrateKbps / length)).toFixed()
