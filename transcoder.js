@@ -101,7 +101,7 @@ const transcodeAndGenerateMpd = async (temporaryFilePath) => {
             .addOption(`-map 0:v:0`)
             .addOption(`-c:v:${index} libx264`)
             .addOption(`-b:v:${index} ${resolution.bitrate}k`)
-            .addOption(`-s:v:${index} ${resolution.width}x${resolution.height}`)
+            .addOption(`-s:v:${index} ${resolution.width > width ? width : resolution.width}x${resolution.height}`)
             .addOption(`-g:v:${index} ${framerate}`);
           // .addOption(`-profile:v:${index} high`);
         });
