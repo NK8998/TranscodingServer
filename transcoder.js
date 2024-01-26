@@ -31,8 +31,7 @@ const transcodeAndGenerateMpd = async (temporaryFilePath) => {
 
     const videoInfo = await getVideoInfo(temporaryFilePath);
 
-    const { height, width, framerate, videoBitrateKbps, codec_name } =
-      videoInfo;
+    const { height, width, framerate, videoBitrateKbps, codec_name } = videoInfo;
     console.log(videoInfo);
     // // Resolutions to include in the DASH manifest
 
@@ -49,13 +48,11 @@ const transcodeAndGenerateMpd = async (temporaryFilePath) => {
       { width: 854, height: 480, bitrate: 1000 },
       { width: 640, height: 360, bitrate: 800 },
       { width: 426, height: 240, bitrate: 400 },
-      { width: 192, height: 144, bitrate: 200 },
+      { width: 256, height: 144, bitrate: 200 },
       // Add more resolutions as needed
     ];
 
-    const resolutions = AllResolutions.filter(
-      (resolution) => resolution.height <= height
-    );
+    const resolutions = AllResolutions.filter((resolution) => resolution.height <= height);
     console.log(resolutions);
     const finalResolutions = resolutions.map((resolution, index) => {
       const length = resolutions.length;
@@ -65,9 +62,7 @@ const transcodeAndGenerateMpd = async (temporaryFilePath) => {
           // Update the bitrate for the first resolution
           return { ...resolution, bitrate: videoBitrateKbps };
         } else {
-          const calculatedBitrate = parseInt(
-            (videoBitrateKbps - index * (videoBitrateKbps / length)).toFixed()
-          );
+          const calculatedBitrate = parseInt((videoBitrateKbps - index * (videoBitrateKbps / length)).toFixed());
           if (resolution.bitrate > calculatedBitrate) {
             return { ...resolution, bitrate: calculatedBitrate };
           } else if (resolution.bitrate < calculatedBitrate) {
@@ -177,11 +172,8 @@ const getVideoInfo = async (videoPath) => {
         console.error("Failed to get video information:", err);
         reject(err);
       } else {
-        const { width, height, r_frame_rate, bit_rate, codec_name } =
-          info.streams[0].coded_width > 0 ? info.streams[0] : info.streams[1];
-        console.log(
-          info.streams[0].coded_width > 0 ? info.streams[0] : info.streams[1]
-        );
+        const { width, height, r_frame_rate, bit_rate, codec_name } = info.streams[0].coded_width > 0 ? info.streams[0] : info.streams[1];
+        console.log(info.streams[0].coded_width > 0 ? info.streams[0] : info.streams[1]);
         const [numerator, denominator] = r_frame_rate.split("/");
         const framerate = parseFloat(numerator) / parseFloat(denominator);
         // Extract the video bitrate in kilobits per second (kbps)
