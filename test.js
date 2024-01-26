@@ -76,14 +76,16 @@ function checkPresets(inputResolution, allResolutions) {
   // Check which dimension of the input resolution matches the presets
   const presetToChange = checkResolution(inputResolution, allResolutions);
 
+  let resolutions;
   // If neither dimension matches the presets, use special presets
   if (presetToChange === "none") {
-    console.log(useSpecialPresets(inputResolution, allResolutions, presetToChange));
-    return;
+    resolutions = useSpecialPresets(inputResolution, allResolutions, presetToChange);
+    return resolutions;
   }
 
   // Otherwise, adjust the presets and log the result
-  console.log(adjustPresets(inputResolution, allResolutions, presetToChange));
+  resolutions = adjustPresets(inputResolution, allResolutions, presetToChange);
+  return resolutions;
 }
 
 // Function to use special presets when neither dimension of the input resolution matches the presets
@@ -102,18 +104,17 @@ function useSpecialPresets(inputResolution, allResolutions, presetToChange) {
   return specialResolutions;
 }
 
-// Define the input resolution and all possible resolutions
-let inputResolution = { width: 1552, height: 1080 };
-let allResolutions = [
-  { width: 3840, height: 2160, bitrate: 4000 },
-  { width: 2560, height: 1440, bitrate: 3000 },
-  { width: 1920, height: 1080, bitrate: 2500 },
-  { width: 1280, height: 720, bitrate: 2000 },
-  { width: 854, height: 480, bitrate: 1000 },
-  { width: 640, height: 360, bitrate: 800 },
-  { width: 426, height: 240, bitrate: 400 },
-  { width: 256, height: 144, bitrate: 200 },
-];
+// // Define the input resolution and all possible resolutions
+// let inputResolution = { width: 1552, height: 1080 };
+// let allResolutions = [
+//   { width: 3840, height: 2160, bitrate: 4000 },
+//   { width: 2560, height: 1440, bitrate: 3000 },
+//   { width: 1920, height: 1080, bitrate: 2500 },
+//   { width: 1280, height: 720, bitrate: 2000 },
+//   { width: 854, height: 480, bitrate: 1000 },
+//   { width: 640, height: 360, bitrate: 800 },
+//   { width: 426, height: 240, bitrate: 400 },
+//   { width: 256, height: 144, bitrate: 200 },
+// ];
 
-// Check the presets and adjust them if necessary
-checkPresets(inputResolution, allResolutions);
+module.exports = checkPresets;

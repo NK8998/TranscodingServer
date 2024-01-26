@@ -6,6 +6,7 @@ const ffmpeg = require("fluent-ffmpeg");
 const ffprobePath = require("@ffprobe-installer/ffprobe").path;
 ffmpeg.setFfprobePath(ffprobePath);
 const AWS = require("aws-sdk");
+const checkPresets = require("./test");
 require("dotenv").config();
 AWS.config.update({ region: "us-east-1" });
 ffmpeg.setFfprobePath(ffprobePath);
@@ -22,9 +23,6 @@ const s3 = new AWS.S3({
 
 const transcodeAndGenerateMpd = async (temporaryFilePath) => {
   try {
-    // const outputDir = 'dash_output';
-    // const outputManifest = path.join(outputDir, 'manifest.mpd');
-
     const outputManifest = "output/output.mpd";
 
     // Check if the output folder exists, if not, create it
@@ -33,13 +31,8 @@ const transcodeAndGenerateMpd = async (temporaryFilePath) => {
 
     const { height, width, framerate, videoBitrateKbps, codec_name } = videoInfo;
     console.log(videoInfo);
-    // // Resolutions to include in the DASH manifest
 
-    // if(codec_name !== 'h264'){
-
-    //   const output = './outputMp4/2020 LG OLED l The Black 4K HDR 60fps.mp4'
-    //   await convertToMp4(inputVideo, output)
-    // }
+    // Resolutions presets to include in the DASH manifest
     const AllResolutions = [
       { width: 3840, height: 2160, bitrate: 4000 },
       { width: 2560, height: 1440, bitrate: 3000 },
@@ -52,37 +45,28 @@ const transcodeAndGenerateMpd = async (temporaryFilePath) => {
       // Add more resolutions as needed
     ];
 
-    const resolutions = AllResolutions.filter((resolution) => resolution.height <= height);
+    const inputResolution = { width: width, height: height };
+    const resolutions = checkPresets(inputResolution, AllResolutions);
     console.log(resolutions);
-    const finalResolutions = resolutions.map((resolution, index) => {
-      const length = resolutions.length;
 
-      if (videoBitrateKbps) {
-        if (index === 0) {
-          // Update the bitrate for the first resolution
-          return { ...resolution, bitrate: videoBitrateKbps > resolution.bitrate ? resolution.bitrate : videoBitrateKbps };
-        } else {
-          const calculatedBitrate = parseInt((videoBitrateKbps - index * (videoBitrateKbps / length)).toFixed());
-          if (resolution.bitrate > calculatedBitrate) {
-            return { ...resolution, bitrate: calculatedBitrate };
-          } else if (resolution.bitrate < calculatedBitrate) {
-            return resolution;
-          }
-        }
-      } else {
-        return resolution;
+    const finalResolutions = resolutions.map((resolution, index) => {
+      if (!videoBitrateKbps) return resolution;
+
+      const length = resolutions.length;
+      const calculatedBitrate = Math.round(videoBitrateKbps - index * (videoBitrateKbps / length));
+
+      // Update the bitrate if the current resolution bitrate is greater than the calculated bitrate
+      if (resolution.bitrate > calculatedBitrate) {
+        return { ...resolution, bitrate: Math.min(resolution.bitrate, videoBitrateKbps, calculatedBitrate) };
       }
+
+      return resolution;
     });
 
-    // const resolutions = [
-    //   {width: 1280, height: 720, bitrate: videoBitrateKbps},
-    //   {width: 640, height: 360, bitrate: 200},
-    // ]
-
-    // Create an FFmpeg command
     console.log(finalResolutions);
 
-    // const videoTotranscode = codec_name !== 'h264' ? `./outputMp4/2020 LG OLED l The Black 4K HDR 60fps.mkv` : inputVideo
+    // Create an FFmpeg command
+
     const generateMPDandChunks = () => {
       return new Promise((resolve, reject) => {
         const command = ffmpeg(temporaryFilePath)
@@ -91,12 +75,12 @@ const transcodeAndGenerateMpd = async (temporaryFilePath) => {
           .addOption("-b:a:0 128k"); // Audio bitrate for all representations
 
         // Dynamically add video options for each resolution
-         finalResolutions.forEach((resolution, index) => {
+        finalResolutions.forEach((resolution, index) => {
           command
             .addOption(`-map 0:v:0`)
             .addOption(`-c:v:${index} libx264`)
             .addOption(`-b:v:${index} ${resolution.bitrate}k`)
-            .addOption(`-s:v:${index} ${resolution.width > width ? width : resolution.width}x?`)
+            .addOption(`-s:v:${index} ${resolution.width}x${resolution.height}`)
             .addOption(`-g:v:${index} ${framerate}`);
         });
 
@@ -266,7 +250,7 @@ const generateMPDandUpload = async (req, res) => {
   try {
     await transcodeAndGenerateMpd(temporaryFilePath);
     await uploadChunks(title);
-    fs.rmdirSync(outputFolder, { recursive: true });
+    fs.rmSync(outputFolder, { recursive: true });
 
     res.status(200).json("video uploaded to aws s3 bucket successfully");
   } catch (error) {
