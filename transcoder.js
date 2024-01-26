@@ -96,14 +96,13 @@ const transcodeAndGenerateMpd = async (temporaryFilePath) => {
           .addOption("-b:a:0 128k"); // Audio bitrate for all representations
 
         // Dynamically add video options for each resolution
-        finalResolutions.forEach((resolution, index) => {
+         finalResolutions.forEach((resolution, index) => {
           command
             .addOption(`-map 0:v:0`)
             .addOption(`-c:v:${index} libx264`)
             .addOption(`-b:v:${index} ${resolution.bitrate}k`)
-            .addOption(`-s:v:${index} ${resolution.width > width ? width : resolution.width}x${resolution.height}`)
+            .addOption(`-s:v:${index} ${resolution.width > width ? width : resolution.width}x?`)
             .addOption(`-g:v:${index} ${framerate}`);
-          // .addOption(`-profile:v:${index} high`);
         });
 
         // Set the output manifest
