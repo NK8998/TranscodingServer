@@ -43,7 +43,12 @@ function filterResolutions(inputResolution, allResolutions, presetToChange) {
   }
 }
 
+function roundToEven(value) {
+  return value % 2 === 0 ? value : value - 1;
+}
+
 // Function to adjust the presets based on the dimension to change
+
 function adjustPresets(inputResolution, allResolutions, presetToChange) {
   // Filter the presets
   const filteredResolutions = filterResolutions(inputResolution, allResolutions, presetToChange);
@@ -54,7 +59,7 @@ function adjustPresets(inputResolution, allResolutions, presetToChange) {
   // map over the filtered resolutions and change the widths according to the aspect ratio
   if (presetToChange === "width") {
     return filteredResolutions.map((preset) => {
-      let newWidth = Math.round(preset.height * aspectRatio);
+      let newWidth = roundToEven(Math.round(preset.height * aspectRatio));
       return { width: newWidth, height: preset.height, bitrate: preset.bitrate };
     });
   }
@@ -62,7 +67,7 @@ function adjustPresets(inputResolution, allResolutions, presetToChange) {
   // map over the filtered resolutions and change the heights according to the aspect ratio
   else if (presetToChange === "height") {
     return filteredResolutions.map((preset) => {
-      let newHeight = Math.round(preset.width / aspectRatio);
+      let newHeight = roundToEven(Math.round(preset.width / aspectRatio));
       return { width: preset.width, height: newHeight, bitrate: preset.bitrate };
     });
   }
@@ -70,6 +75,7 @@ function adjustPresets(inputResolution, allResolutions, presetToChange) {
   // Return the adjusted resolutions
   return filteredResolutions;
 }
+
 
 // Function to check the presets and adjust them if necessary
 function checkPresets(inputResolution, allResolutions) {
@@ -97,7 +103,7 @@ function useSpecialPresets(inputResolution, allResolutions, presetToChange) {
   const filteredResolutions = filterResolutions(inputResolution, allResolutions, presetToChange);
   // Map over the filtered resolutions and adjust both dimensions according to the aspect ratio
   const specialResolutions = filteredResolutions.map((preset) => {
-    return { width: Math.round(preset.height * aspectRatio), height: Math.round(preset.width * aspectRatio), bitrate: preset.bitrate };
+    return { width: roundToEven(Math.round(preset.height * aspectRatio)), height: roundToEven(Math.round(preset.width * aspectRatio)), bitrate: preset.bitrate };
   });
 
   // Return the special resolutions
