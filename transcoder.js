@@ -34,33 +34,41 @@ const transcodeAndGenerateMpd = async (temporaryFilePath) => {
 
     // Resolutions presets to include in the DASH manifest
     const AllResolutions = [
-      { width: 3840, height: 2160, bitrate: 4000 },
-      { width: 2560, height: 1440, bitrate: 3000 },
-      { width: 1920, height: 1080, bitrate: 2500 },
-      { width: 1280, height: 720, bitrate: 2000 },
-      { width: 854, height: 480, bitrate: 1000 },
-      { width: 640, height: 360, bitrate: 800 },
-      { width: 426, height: 240, bitrate: 400 },
-      { width: 256, height: 144, bitrate: 200 },
+      { width: 3840, height: 2160, bitrate: 4000, framerate: framerate },
+      { width: 2560, height: 1440, bitrate: 3000, framerate: framerate },
+      { width: 1920, height: 1080, bitrate: 2500, framerate: framerate },
+      { width: 1280, height: 720, bitrate: 2000,  framerate: framerate },
+      { width: 854, height: 480, bitrate: 1000,  framerate: framerate },
+      { width: 640, height: 360, bitrate: 800,  framerate: framerate },
+      { width: 426, height: 240, bitrate: 400,  framerate: framerate },
+      { width: 256, height: 144, bitrate: 200,  framerate: framerate },
       // Add more resolutions as needed
     ];
 
-    const inputResolution = { width: width, height: height };
+    const inputResolution = { width: width, height: height, framerate: framerate };
     const resolutions = checkPresets(inputResolution, AllResolutions);
     console.log(resolutions);
 
     const finalResolutions = resolutions.map((resolution, index) => {
-      if (!videoBitrateKbps) return resolution;
+      let newRes = {...resolution};
+
+      //make sure framerate never exceeds 30 for resolution less than or equal to 480
+      if(resolution <= 480){
+        newRes.framerate = newRes.framerate > 30 ? 30 : newRes.framerate;
+      }
+      if (!videoBitrateKbps) return newRes;
 
       const length = resolutions.length;
       const calculatedBitrate = Math.round(videoBitrateKbps - index * (videoBitrateKbps / length));
 
       // Update the bitrate if the current resolution bitrate is greater than the calculated bitrate
       if (resolution.bitrate > calculatedBitrate) {
-        return { ...resolution, bitrate: Math.min(resolution.bitrate, videoBitrateKbps, calculatedBitrate) };
+        newRes = { ...newRes, bitrate: Math.min(resolution.bitrate, videoBitrateKbps, calculatedBitrate) };
+
+        return newRes;
       }
 
-      return resolution;
+      return newRes;
     });
 
     console.log(finalResolutions);
@@ -81,7 +89,7 @@ const transcodeAndGenerateMpd = async (temporaryFilePath) => {
             .addOption(`-c:v:${index} libx264`)
             .addOption(`-b:v:${index} ${resolution.bitrate}k`)
             .addOption(`-s:v:${index} ${resolution.width}x${resolution.height}`)
-            .addOption(`-g:v:${index} ${framerate}`);
+            .addOption(`-g:v:${index} ${resolution.framerate}`);
         });
 
         // Set the output manifest
