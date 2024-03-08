@@ -13,18 +13,14 @@ app.use(
 
 app.use(express.json());
 const multer = require("multer");
-const generateMPDandUpload = require("./transcoder");
+const generateMPDandUpload = require("./endpoints/transcoder");
 const upload = multer({ storage: multer.memoryStorage() });
 
 app.get("/test", (req, res) => {
   res.status(200).json("okay to go");
 });
 
-app.post(
-  "/transcode",
-  upload.fields([{ name: "video", maxCount: 1 }]),
-  generateMPDandUpload
-);
+app.post("/transcode", upload.fields([{ name: "video", maxCount: 1 }]), generateMPDandUpload);
 
 app.listen("5573", () => {
   console.log("listening on port 5573");

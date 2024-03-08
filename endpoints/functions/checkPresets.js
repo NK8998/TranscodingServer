@@ -60,7 +60,7 @@ function adjustPresets(inputResolution, allResolutions, presetToChange) {
   if (presetToChange === "width") {
     return filteredResolutions.map((preset) => {
       let newWidth = roundToEven(Math.round(preset.height * aspectRatio));
-      return { width: newWidth, height: preset.height, bitrate: preset.bitrate };
+      return { width: newWidth, height: preset.height, bitrate: preset.bitrate, framerate: inputResolution.framerate };
     });
   }
   // If the dimension to change is "height",
@@ -68,14 +68,12 @@ function adjustPresets(inputResolution, allResolutions, presetToChange) {
   else if (presetToChange === "height") {
     return filteredResolutions.map((preset) => {
       let newHeight = roundToEven(Math.round(preset.width / aspectRatio));
-      return { width: preset.width, height: newHeight, bitrate: preset.bitrate };
+      return { width: preset.width, height: newHeight, bitrate: preset.bitrate, framerate: inputResolution.framerate };
     });
   }
 
-  // Return the adjusted resolutions
   return filteredResolutions;
 }
-
 
 // Function to check the presets and adjust them if necessary
 function checkPresets(inputResolution, allResolutions) {
@@ -103,7 +101,12 @@ function useSpecialPresets(inputResolution, allResolutions, presetToChange) {
   const filteredResolutions = filterResolutions(inputResolution, allResolutions, presetToChange);
   // Map over the filtered resolutions and adjust both dimensions according to the aspect ratio
   const specialResolutions = filteredResolutions.map((preset) => {
-    return { width: roundToEven(Math.round(preset.height * aspectRatio)), height: roundToEven(Math.round(preset.width * aspectRatio)), bitrate: preset.bitrate };
+    return {
+      width: roundToEven(Math.round(preset.height * aspectRatio)),
+      height: roundToEven(Math.round(preset.width * aspectRatio)),
+      bitrate: preset.bitrate,
+      framerate: inputResolution.framerate,
+    };
   });
 
   // Return the special resolutions
