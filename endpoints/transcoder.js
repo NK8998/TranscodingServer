@@ -1,4 +1,5 @@
 // const { createClient } = require('@supabase/supabase-js');
+const AWS = require("aws-sdk");
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
@@ -8,14 +9,24 @@ ffmpeg.setFfprobePath(ffprobePath);
 const checkPresets = require("./functions/checkPresets");
 const getVideoInfo = require("./functions/getVideoInfo");
 const uploadChunks = require("./functions/uploadToS3");
+const getVideosInQueue = require("./functions/getVideos");
+const removeVideosFromQueue = require("./functions/removeVideos");
 require("dotenv").config();
 ffmpeg.setFfmpegPath(require("ffmpeg-static"));
 
-const transcodeAndGenerateMpd = async (temporaryFilePath, videoInfo) => {
-  try {
-    const scriptDirectory = __dirname;
-    const outputManifest = `${scriptDirectory}/functions/output/output.mpd`;
+AWS.config.update({ region: "ap-south-1" });
 
+const s3 = new AWS.S3({
+  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  maxRetries: 10, // Maximum number of retry attempts for failed requests
+  httpOptions: {
+    timeout: 120000, // Request timeout in milliseconds
+  },
+});
+
+const transcodeAndGenerateMpd = async (temporaryFilePath, videoInfo, outputManifest) => {
+  try {
     // Check if the output folder exists, if not, create it
     const { height, width, framerate, videoBitrateKbps, codec_name } = videoInfo;
 
@@ -123,33 +134,74 @@ const transcodeAndGenerateMpd = async (temporaryFilePath, videoInfo) => {
   }
 };
 
-const generateMPDandUpload = async (req, res) => {
-  const { video } = req.files;
-  const { title, videoId } = req.body;
+const downloadVideo = async (video) => {
+  console.log(video);
+  const params = {
+    Bucket: process.env.AWS_UNPROCESSED_BUCKET_NAME, // replace with your bucket name
+    Key: video.video_id,
+  };
+  console.log(params);
+  return new Promise((resolve, reject) => {
+    s3.getObject(params, (err, data) => {
+      if (err) {
+        console.error(err);
+        reject(err);
+      } else {
+        const scriptDirectory = __dirname;
+        const folderName = `./folder-${video.video_id}`;
+        if (!fs.existsSync(folderName)) {
+          fs.mkdirSync(folderName, { recursive: true });
+        }
+        const videoPath = `${folderName}/${video.video_id}`;
+        fs.writeFileSync(videoPath, data.Body);
+        resolve(videoPath);
+      }
+    });
+  });
+};
 
-  const videoFile = video[0];
-  const temporaryFilePath = path.join(os.tmpdir(), videoFile.originalname);
-  fs.writeFileSync(temporaryFilePath, videoFile.buffer);
-
-  const scriptDirectory = __dirname;
-  // Construct the path to the "output" folder
-  const outputFolder = path.join(scriptDirectory, "functions/output");
-
-  fs.mkdirSync(outputFolder, { recursive: true });
-
+const generateMPDandUpload = async (video) => {
   try {
-    const videoInfo = await getVideoInfo(temporaryFilePath);
-    await transcodeAndGenerateMpd(temporaryFilePath, videoInfo);
-    const mpdUrl = await uploadChunks(title);
+    const scriptDirectory = __dirname;
+    const outputManifest = `${scriptDirectory}/functions/${video.video_id}/output.mpd`;
+    fs.mkdirSync(outputManifest, { recursive: true });
+    const videoPath = await downloadVideo(video);
+
+    const videoInfo = await getVideoInfo(videoPath);
+    console.log(videoInfo);
+
+    await transcodeAndGenerateMpd(videoPath, videoInfo, outputManifest);
+    const mpdUrl = await uploadChunks(outputManifest, video.video_id);
     const { duration } = videoInfo;
-    console.log(mpdUrl, videoId, title, duration);
+    console.log(mpdUrl, video.video_id, title, duration);
     // upload to supabase
-    fs.rmSync(outputFolder, { recursive: true });
+    fs.rmSync(outputManifest, { recursive: true });
 
     res.status(200).json("video uploaded to aws s3 bucket successfully");
   } catch (error) {
-    res.status(500).json("error when transcoding", error);
+    console.log(error);
   }
 };
 
-module.exports = generateMPDandUpload;
+const setUpTranscodingJobs = async () => {
+  let queuedVideos = (await getVideosInQueue()) || [];
+
+  const transcodingPromises = queuedVideos.map((video) => {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const result = await generateMPDandUpload(video);
+        resolve(result);
+      } catch (error) {
+        reject(error);
+      }
+    });
+  });
+
+  await Promise.all(transcodingPromises);
+
+  await removeVideosFromQueue(queuedVideos);
+
+  // Wait for 5 seconds before polling again
+  setTimeout(setUpTranscodingJobs, 5000);
+};
+module.exports = setUpTranscodingJobs;

@@ -2,7 +2,7 @@ const AWS = require("aws-sdk");
 const path = require("path");
 const fs = require("fs");
 require("dotenv").config();
-AWS.config.update({ region: "us-east-1" });
+AWS.config.update({ region: "ap-south-1" });
 
 const s3 = new AWS.S3({
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -13,7 +13,7 @@ const s3 = new AWS.S3({
   },
 });
 
-const uploadChunks = async (title) => {
+const uploadChunks = async (chunksDirectory, title) => {
   async function uploadFile(filePath, destinationPath, mpd) {
     const fileData = fs.readFileSync(filePath);
 
@@ -37,8 +37,6 @@ const uploadChunks = async (title) => {
       return null;
     }
   }
-
-  const chunksDirectory = path.join(__dirname, "output");
 
   try {
     const files = await fs.promises.readdir(chunksDirectory);
