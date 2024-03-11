@@ -11,6 +11,7 @@ const getVideoInfo = require("./functions/getVideoInfo");
 const uploadChunks = require("./functions/uploadToS3");
 const getVideosInQueue = require("./functions/getVideos");
 const removeVideosFromQueue = require("./functions/removeVideos");
+const { isRunningFunction, isRunning } = require("./functions/isRunning");
 require("dotenv").config();
 ffmpeg.setFfmpegPath(require("ffmpeg-static"));
 
@@ -140,7 +141,6 @@ const downloadVideo = async (video) => {
     Bucket: process.env.AWS_UNPROCESSED_BUCKET_NAME, // replace with your bucket name
     Key: video.video_id,
   };
-  console.log(params);
   return new Promise((resolve, reject) => {
     s3.getObject(params, (err, data) => {
       if (err) {
@@ -184,7 +184,13 @@ const generateMPDandUpload = async (video) => {
 };
 
 const setUpTranscodingJobs = async () => {
+  isRunningFunction(true);
   let queuedVideos = (await getVideosInQueue()) || [];
+
+  if (queuedVideos.length === 0) {
+    isRunningFunction(false);
+    return;
+  }
 
   const transcodingPromises = queuedVideos.map((video) => {
     return new Promise(async (resolve, reject) => {
@@ -192,7 +198,9 @@ const setUpTranscodingJobs = async () => {
         const result = await generateMPDandUpload(video);
         resolve(result);
       } catch (error) {
-        reject(error);
+        console.error(`Error processing video ${video.video_id}: ${error}`);
+        resolve(null); // Resolve with null on error
+        // update the error field in video-metadata table and inform user.
       }
     });
   });
@@ -201,7 +209,6 @@ const setUpTranscodingJobs = async () => {
 
   await removeVideosFromQueue(queuedVideos);
 
-  // Wait for 5 seconds before polling again
-  setTimeout(setUpTranscodingJobs, 5000);
+  setUpTranscodingJobs();
 };
 module.exports = setUpTranscodingJobs;
