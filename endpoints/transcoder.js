@@ -174,7 +174,7 @@ const generateMPDandUpload = async (video) => {
     await transcodeAndGenerateMpd(videoPath, videoInfo, outputManifest);
     const mpdUrl = await uploadChunks(outputManifest, video.video_id);
     const { duration } = videoInfo;
-    console.log(mpdUrl, video.video_id, title, duration);
+    console.log(mpdUrl, video.video_id, duration);
     // upload to supabase
     fs.rmSync(outputManifest, { recursive: true });
 
