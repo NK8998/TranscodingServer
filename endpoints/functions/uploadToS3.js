@@ -13,7 +13,8 @@ const s3 = new AWS.S3({
   },
 });
 
-const uploadChunks = async (chunksDirectory, title) => {
+const uploadChunks = async (outputFolder, title) => {
+  const chunksDirectory = outputFolder;
   async function uploadFile(filePath, destinationPath, mpd) {
     const fileData = fs.readFileSync(filePath);
 

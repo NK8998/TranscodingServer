@@ -26,8 +26,9 @@ const s3 = new AWS.S3({
   },
 });
 
-const transcodeAndGenerateMpd = async (temporaryFilePath, videoInfo, outputManifest) => {
+const transcodeAndGenerateMpd = async (temporaryFilePath, videoInfo, outputFolder) => {
   try {
+    const outputManifest = `${outputFolder}/output.mpd`;
     // Check if the output folder exists, if not, create it
     const { height, width, framerate, videoBitrateKbps, codec_name } = videoInfo;
 
@@ -163,7 +164,7 @@ const downloadVideo = async (video) => {
 const generateMPDandUpload = async (video) => {
   try {
     const scriptDirectory = __dirname;
-    const outputManifest = `${scriptDirectory}/functions/${video.video_id}/output.mpd`;
+    const outputManifest = `${scriptDirectory}/functions/${video.video_id}`;
     fs.mkdirSync(outputManifest, { recursive: true });
     const videoPath = await downloadVideo(video);
 
