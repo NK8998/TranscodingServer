@@ -1,4 +1,4 @@
-const { getIsRunning } = require("./endpoints/functions/isRunning");
+const { getIsRunning, updatePayload } = require("./endpoints/functions/isRunning");
 const setUpTranscodingJobs = require("./endpoints/transcoder");
 const { createClient } = require("@supabase/supabase-js");
 require("dotenv").config();
@@ -19,7 +19,6 @@ const channel = supabase
         console.log("guess what I fucking ran anyway!!!");
         setUpTranscodingJobs();
       }
-      console.log(payload);
     }
   )
   .subscribe();

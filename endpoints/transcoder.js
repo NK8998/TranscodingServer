@@ -11,7 +11,7 @@ const getVideoInfo = require("./functions/getVideoInfo");
 const uploadChunks = require("./functions/uploadToS3");
 const getVideosInQueue = require("./functions/getVideos");
 const removeVideosFromQueue = require("./functions/removeVideos");
-const { isRunningFunction, isRunning } = require("./functions/isRunning");
+const { isRunningFunction, isRunning, getPayload } = require("./functions/isRunning");
 require("dotenv").config();
 ffmpeg.setFfmpegPath(require("ffmpeg-static"));
 
@@ -184,15 +184,20 @@ const generateMPDandUpload = async (video) => {
   }
 };
 
+let interValId;
 const setUpTranscodingJobs = async () => {
   isRunningFunction(true);
-  let queuedVideos = (await getVideosInQueue()) || [];
+
+  queuedVideos = (await getVideosInQueue()) || [];
 
   if (queuedVideos.length === 0) {
-    isRunningFunction(false);
+    interValId = setInterval(() => {
+      console.log("dummy task");
+    }, 1000 * 60 * 60);
     return;
   }
 
+  clearInterval(interValId);
   const transcodingPromises = queuedVideos.map((video) => {
     return new Promise(async (resolve, reject) => {
       try {
@@ -205,9 +210,7 @@ const setUpTranscodingJobs = async () => {
       }
     });
   });
-
   await Promise.all(transcodingPromises);
-
   await removeVideosFromQueue(queuedVideos);
 
   setUpTranscodingJobs();
