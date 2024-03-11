@@ -5,15 +5,23 @@ require("dotenv").config();
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
-supabase
-  .from("video-queue")
-  .on("INSERT", (payload) => {
-    console.log("Change received!", payload);
-    const isRunning = getIsRunning();
-    if (!isRunning) {
-      setUpTranscodingJobs();
+const channel = supabase
+  .channel("video-queue")
+  .on(
+    "postgres_changes",
+    {
+      event: "INSERT",
+      schema: "public",
+    },
+    (payload) => {
+      const isRunning = getIsRunning();
+      if (!isRunning) {
+        console.log("guess what I fucking ran anyway!!!");
+        setUpTranscodingJobs();
+      }
+      console.log(payload);
     }
-  })
+  )
   .subscribe();
 
 setUpTranscodingJobs();
