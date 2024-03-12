@@ -60,7 +60,14 @@ function adjustPresets(inputResolution, allResolutions, presetToChange) {
   if (presetToChange === "width") {
     return filteredResolutions.map((preset) => {
       let newWidth = roundToEven(Math.round(preset.height * aspectRatio));
-      return { width: newWidth, height: preset.height, bitrate: preset.bitrate, framerate: inputResolution.framerate };
+      return {
+        width: newWidth,
+        height: preset.height,
+        bitrate: preset.bitrate,
+        framerate: inputResolution.framerate,
+        tag: preset.tag,
+        supersript: preset.supersript,
+      };
     });
   }
   // If the dimension to change is "height",
@@ -68,7 +75,14 @@ function adjustPresets(inputResolution, allResolutions, presetToChange) {
   else if (presetToChange === "height") {
     return filteredResolutions.map((preset) => {
       let newHeight = roundToEven(Math.round(preset.width / aspectRatio));
-      return { width: preset.width, height: newHeight, bitrate: preset.bitrate, framerate: inputResolution.framerate };
+      return {
+        width: preset.width,
+        height: newHeight,
+        bitrate: preset.bitrate,
+        framerate: inputResolution.framerate,
+        tag: preset.tag,
+        supersript: preset.supersript,
+      };
     });
   }
 
@@ -99,6 +113,7 @@ function useSpecialPresets(inputResolution, allResolutions, presetToChange) {
   const aspectRatio = calculateAspectRatio(inputResolution);
   // Filter the presets
   const filteredResolutions = filterResolutions(inputResolution, allResolutions, presetToChange);
+  // console.log(filteredResolutions);
   // Map over the filtered resolutions and adjust both dimensions according to the aspect ratio
   const specialResolutions = filteredResolutions.map((preset) => {
     return {
@@ -106,24 +121,30 @@ function useSpecialPresets(inputResolution, allResolutions, presetToChange) {
       height: roundToEven(Math.round(preset.width * aspectRatio)),
       bitrate: preset.bitrate,
       framerate: inputResolution.framerate,
+      tag: preset.tag,
+      supersript: preset.supersript,
     };
   });
 
+  specialResolutions[0] = { ...specialResolutions[0], height: inputResolution.height, width: inputResolution.width };
   // Return the special resolutions
   return specialResolutions;
 }
 
 // // Define the input resolution and all possible resolutions
-// let inputResolution = { width: 1552, height: 1080 };
-// let allResolutions = [
-//   { width: 3840, height: 2160, bitrate: 4000 },
-//   { width: 2560, height: 1440, bitrate: 3000 },
-//   { width: 1920, height: 1080, bitrate: 2500 },
-//   { width: 1280, height: 720, bitrate: 2000 },
-//   { width: 854, height: 480, bitrate: 1000 },
-//   { width: 640, height: 360, bitrate: 800 },
-//   { width: 426, height: 240, bitrate: 400 },
-//   { width: 256, height: 144, bitrate: 200 },
+
+// let framerate = 24;
+// let inputResolution = { width: 1552, height: 1080, framerate: framerate };
+// const AllResolutions = [
+//   { width: 3840, height: 2160, bitrate: 4000, framerate: framerate, tag: "2160p", supersript: "4k" },
+//   { width: 2560, height: 1440, bitrate: 3000, framerate: framerate, tag: "1440p", supersript: "HD" },
+//   { width: 1920, height: 1080, bitrate: 2500, framerate: framerate, tag: "1080p", supersript: "HD" },
+//   { width: 1280, height: 720, bitrate: 2000, framerate: framerate, tag: "720p", supersript: "" },
+//   { width: 854, height: 480, bitrate: 1000, framerate: framerate, tag: "480p", supersript: "" },
+//   { width: 640, height: 360, bitrate: 800, framerate: framerate, tag: "360p", supersript: "" },
+//   { width: 426, height: 240, bitrate: 400, framerate: framerate, tag: "240p", supersript: "" },
+//   { width: 256, height: 144, bitrate: 200, framerate: framerate, tag: "144p", supersript: "" },
+//   // Add more resolutions as needed
 // ];
 
 module.exports = checkPresets;
