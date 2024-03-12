@@ -12,6 +12,7 @@ const uploadChunks = require("./functions/uploadToS3");
 const getVideosInQueue = require("./functions/getVideos");
 const removeVideosFromQueue = require("./functions/removeVideos");
 const { isRunningFunction, isRunning, getPayload } = require("./functions/isRunning");
+
 require("dotenv").config();
 ffmpeg.setFfmpegPath(require("ffmpeg-static"));
 
@@ -177,8 +178,6 @@ const generateMPDandUpload = async (video) => {
     console.log(mpdUrl, video.video_id, duration);
     // upload to supabase
     fs.rmSync(outputManifest, { recursive: true });
-
-    res.status(200).json("video uploaded to aws s3 bucket successfully");
   } catch (error) {
     console.log(error);
   }

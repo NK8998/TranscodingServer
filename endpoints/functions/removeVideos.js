@@ -16,4 +16,4 @@ const removeVideosFromQueue = async (videos) => {
   }
 };
 
-module.export = removeVideosFromQueue;
+module.exports = removeVideosFromQueue;
