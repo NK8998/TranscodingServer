@@ -185,6 +185,7 @@ const generateMPDandUpload = async (video) => {
 
 let interValId;
 const setUpTranscodingJobs = async () => {
+  console.log("running");
   isRunningFunction(true);
 
   queuedVideos = (await getVideosInQueue()) || [];
