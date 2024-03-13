@@ -15,6 +15,7 @@ const { isRunningFunction, isRunning, getPayload } = require("./functions/isRunn
 const getPreviews = require("./functions/extractFrames");
 const getResolutions = require("./functions/getResolutions");
 const uploadPalletes = require("./functions/uploadPalletes");
+const adjustFrameExtraction = require("./functions/adjustFrameExtraction");
 
 require("dotenv").config();
 ffmpeg.setFfmpegPath(require("ffmpeg-static"));
@@ -155,8 +156,9 @@ const generateMPDandUpload = async (video) => {
 
     const resolutions = getResolutions(inputResolution);
     console.log(resolutions);
+    const priviewAdjustments = adjustFrameExtraction(duration);
 
-    await getPreviews(videoPath, videoPathDir, resolutions);
+    await getPreviews(videoPath, videoPathDir, resolutions, priviewAdjustments);
 
     await transcodeAndGenerateMpd(videoPath, videoPathDir, videoBitrateKbps, resolutions);
 

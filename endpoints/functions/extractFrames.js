@@ -4,13 +4,13 @@ const fs = require("fs");
 const path = require("path");
 const { exec } = require("child_process");
 
-async function extractFrames(videoPath, extractedFramesDir) {
+async function extractFrames(videoPath, extractedFramesDir, extractionRate) {
   if (!fs.existsSync(extractedFramesDir)) {
     fs.mkdirSync(extractedFramesDir);
   }
   return new Promise((resolve, reject) => {
     ffmpeg(videoPath)
-      .outputOptions("-vf", "fps=1/5") // Extract frame every 5 seconds
+      .outputOptions("-vf", `fps=1/${extractionRate}`) // Extract frame every 5 seconds
       .output(`${extractedFramesDir}/output_%04d_preview.jpeg`)
       .on("end", () => {
         console.log("Frame extraction complete.");
@@ -71,7 +71,7 @@ async function compressImages(extractedFramesDir, compressedFramesDir, lowestRes
   });
 }
 
-async function createPalette(compressedFramesDir, palletesDir) {
+async function createPalette(compressedFramesDir, palletesDir, paletteSize) {
   const files = await fs.promises.readdir(compressedFramesDir);
 
   // Create the 'palettes' directory if it doesn't exist
@@ -80,36 +80,41 @@ async function createPalette(compressedFramesDir, palletesDir) {
     fs.mkdirSync(paletteDirectory);
   }
 
-  // Group files into batches of 9
+  // Group files into batches of whatever palletSize is
   const batches = [];
-  for (let i = 0; i < files.length; i += 9) {
-    batches.push(files.slice(i, i + 9));
+  const pallet = paletteSize * paletteSize;
+  for (let i = 0; i < files.length; i += pallet) {
+    batches.push(files.slice(i, i + pallet));
   }
 
-  // Map over batches and create palette of 3 x 3 using ffmpeg
+  // Map over batches and create palette of palletSize x palletSize using ffmpeg
   for (const [i, batch] of batches.entries()) {
     const inputFiles = batch.map((file) => `-i ${compressedFramesDir}/${file}`).join(" ");
     const palettePath = `${paletteDirectory}/batch_${i + 1}_palette.jpeg`;
 
-    exec(`ffmpeg ${inputFiles} -filter_complex "concat=n=${batch.length}:v=1:a=0,scale=iw*3:ih*3:flags=neighbor,tile=3x3" ${palettePath}`, (err) => {
-      if (err) {
-        console.error(`Error creating palette for batch ${i + 1}:`, err);
-      } else {
-        console.log(`Palette created for batch ${i + 1}`);
+    exec(
+      `ffmpeg ${inputFiles} -filter_complex "concat=n=${batch.length}:v=1:a=0,scale=iw*${paletteSize}:ih*${paletteSize}:flags=neighbor,tile=${paletteSize}x${paletteSize}" ${palettePath}`,
+      (err) => {
+        if (err) {
+          console.error(`Error creating palette for batch ${i + 1}:`, err);
+        } else {
+          console.log(`Palette created for batch ${i + 1}`);
+        }
       }
-    });
+    );
   }
 }
 
-async function getPreviews(videoPath, videoPathDir, resolutions) {
+async function getPreviews(videoPath, videoPathDir, resolutions, priviewAdjustments) {
+  const { extractionRate, paletteSize } = priviewAdjustments;
   const extractedFramesDir = `${videoPathDir}/extractedFrames`;
   const compressedFramesDir = `${videoPathDir}/compressed`;
   const palletesDir = `${videoPathDir}/palletes`;
   const lowestRes = resolutions[resolutions.length - 1];
   try {
-    await extractFrames(videoPath, extractedFramesDir);
+    await extractFrames(videoPath, extractedFramesDir, extractionRate);
     await compressImages(extractedFramesDir, compressedFramesDir, lowestRes);
-    await createPalette(compressedFramesDir, palletesDir);
+    await createPalette(compressedFramesDir, palletesDir, paletteSize);
   } catch (err) {
     console.error("An error occurred during processing:", err);
   }
