@@ -12,6 +12,9 @@ const uploadChunks = require("./functions/uploadToS3");
 const getVideosInQueue = require("./functions/getVideos");
 const removeVideosFromQueue = require("./functions/removeVideos");
 const { isRunningFunction, isRunning, getPayload } = require("./functions/isRunning");
+const getPreviews = require("./functions/extractFrames");
+const getResolutions = require("./functions/getResolutions");
+const uploadPalletes = require("./functions/uploadPalletes");
 
 require("dotenv").config();
 ffmpeg.setFfmpegPath(require("ffmpeg-static"));
@@ -27,28 +30,12 @@ const s3 = new AWS.S3({
   },
 });
 
-const transcodeAndGenerateMpd = async (temporaryFilePath, videoInfo, outputFolder) => {
+const transcodeAndGenerateMpd = async (videoPath, videoPathDir, videoBitrateKbps, resolutions) => {
   try {
-    const outputManifest = `${outputFolder}/output.mpd`;
+    const MpdOutput = `${videoPathDir}/MPDOutput`;
+    fs.mkdirSync(MpdOutput, { recursive: true });
+    const outputManifest = `${MpdOutput}/output.mpd`;
     // Check if the output folder exists, if not, create it
-    const { height, width, framerate, videoBitrateKbps, codec_name } = videoInfo;
-
-    // Resolutions presets to include in the DASH manifest
-    const AllResolutions = [
-      { width: 3840, height: 2160, bitrate: 4000, framerate: framerate, tag: "2160p", supersript: "4k" },
-      { width: 2560, height: 1440, bitrate: 3000, framerate: framerate, tag: "1440p", supersript: "HD" },
-      { width: 1920, height: 1080, bitrate: 2500, framerate: framerate, tag: "1080p", supersript: "HD" },
-      { width: 1280, height: 720, bitrate: 2000, framerate: framerate, tag: "720p", supersript: "" },
-      { width: 854, height: 480, bitrate: 1000, framerate: framerate, tag: "480p", supersript: "" },
-      { width: 640, height: 360, bitrate: 800, framerate: framerate, tag: "360p", supersript: "" },
-      { width: 426, height: 240, bitrate: 400, framerate: framerate, tag: "240p", supersript: "" },
-      { width: 256, height: 144, bitrate: 200, framerate: framerate, tag: "144p", supersript: "" },
-      // Add more resolutions as needed
-    ];
-
-    const inputResolution = { width: width, height: height, framerate: framerate };
-    const resolutions = checkPresets(inputResolution, AllResolutions);
-
     const finalResolutions = resolutions.map((resolution, index) => {
       let newRes = { ...resolution };
 
@@ -77,7 +64,7 @@ const transcodeAndGenerateMpd = async (temporaryFilePath, videoInfo, outputFolde
 
     const generateMPDandChunks = () => {
       return new Promise((resolve, reject) => {
-        const command = ffmpeg(temporaryFilePath)
+        const command = ffmpeg(videoPath)
           .addOption("-map 0:a:0") // Include audio stream from input
           .addOption("-c:a:0 aac") // Audio codec for all representations
           .addOption("-b:a:0 128k"); // Audio bitrate for all representations
@@ -124,14 +111,6 @@ const transcodeAndGenerateMpd = async (temporaryFilePath, videoInfo, outputFolde
     };
 
     await generateMPDandChunks();
-
-    fs.unlink(temporaryFilePath, (err) => {
-      if (err) {
-        console.error("Failed to delete the file:", err);
-        return;
-      }
-      console.log("File deleted successfully");
-    });
   } catch (error) {
     console.error("something went wrong", error);
   }
@@ -164,20 +143,30 @@ const downloadVideo = async (video) => {
 
 const generateMPDandUpload = async (video) => {
   try {
-    const scriptDirectory = __dirname;
-    const outputManifest = `${scriptDirectory}/functions/${video.video_id}`;
-    fs.mkdirSync(outputManifest, { recursive: true });
     const videoPath = await downloadVideo(video);
+    const videoPathDir = path.dirname(videoPath);
 
     const videoInfo = await getVideoInfo(videoPath);
     console.log(videoInfo);
 
-    await transcodeAndGenerateMpd(videoPath, videoInfo, outputManifest);
-    const mpdUrl = await uploadChunks(outputManifest, video.video_id);
-    const { duration } = videoInfo;
+    const { width, height, framerate, duration, videoBitrateKbps } = videoInfo;
+
+    const inputResolution = { width: width, height: height, framerate: framerate };
+
+    const resolutions = getResolutions(inputResolution);
+    console.log(resolutions);
+
+    await getPreviews(videoPath, videoPathDir, resolutions);
+
+    await transcodeAndGenerateMpd(videoPath, videoPathDir, videoBitrateKbps, resolutions);
+
+    const mpdUrl = await uploadChunks(videoPathDir, video.video_id);
+
+    await uploadPalletes(videoPathDir, video.video_id);
+
     console.log(mpdUrl, video.video_id, duration);
     // upload to supabase
-    fs.rmSync(outputManifest, { recursive: true });
+    fs.rmSync(videoPathDir, { recursive: true });
   } catch (error) {
     console.log(error);
   }

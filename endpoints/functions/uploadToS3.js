@@ -13,8 +13,8 @@ const s3 = new AWS.S3({
   },
 });
 
-const uploadChunks = async (outputFolder, title) => {
-  const chunksDirectory = outputFolder;
+const uploadChunks = async (videoPathDir, title) => {
+  const chunksDirectory = `${videoPathDir}/MPDOutput`;
   async function uploadFile(filePath, destinationPath, mpd) {
     const fileData = fs.readFileSync(filePath);
 
@@ -53,7 +53,7 @@ const uploadChunks = async (outputFolder, title) => {
     // Upload the first .mpd file found
     const mpdFile = mpdFiles[0];
     const mpdFilePath = path.join(chunksDirectory, mpdFile);
-    const destinationPath = `${title}/${mpdFile}`;
+    const destinationPath = `${title}/chunks/${mpdFile}`;
     let mpd = true;
     const mpdUrl = await uploadFile(mpdFilePath, destinationPath, mpd);
 
@@ -63,7 +63,7 @@ const uploadChunks = async (outputFolder, title) => {
       .filter((file) => !file.endsWith(".mpd"))
       .map((file) => {
         const filePath = path.join(chunksDirectory, file);
-        const destinationPath = `${title}/${file}`;
+        const destinationPath = `${title}/chunks/${file}`;
         return uploadFile(filePath, destinationPath, mpd);
       });
 

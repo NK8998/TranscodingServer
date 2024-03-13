@@ -1,0 +1,118 @@
+const ffmpeg = require("fluent-ffmpeg");
+const sharp = require("sharp");
+const fs = require("fs");
+const path = require("path");
+const { exec } = require("child_process");
+
+async function extractFrames(videoPath, extractedFramesDir) {
+  if (!fs.existsSync(extractedFramesDir)) {
+    fs.mkdirSync(extractedFramesDir);
+  }
+  return new Promise((resolve, reject) => {
+    ffmpeg(videoPath)
+      .outputOptions("-vf", "fps=1/5") // Extract frame every 5 seconds
+      .output(`${extractedFramesDir}/output_%04d_preview.jpeg`)
+      .on("end", () => {
+        console.log("Frame extraction complete.");
+        resolve();
+      })
+      .on("error", (err) => {
+        console.error(err);
+        reject(err);
+      })
+      .run();
+  });
+}
+
+// 110
+
+async function compressImages(extractedFramesDir, compressedFramesDir, lowestRes) {
+  const { height, width } = lowestRes;
+  return new Promise(async (resolve, reject) => {
+    try {
+      const files = await fs.promises.readdir(extractedFramesDir);
+      await fs.promises.mkdir(compressedFramesDir, { recursive: true });
+
+      const compressPromises = files.map(async (file) => {
+        const inputFilePath = path.join(extractedFramesDir, file);
+        let outputFilePath = path.join(compressedFramesDir, file);
+
+        let compressed = false;
+        let quality = 80; // Starting quality
+
+        while (!compressed) {
+          await sharp(inputFilePath)
+            .resize({ width: width, height: height, fit: "inside" })
+            .jpeg({ quality, progressive: true })
+            .toFile(outputFilePath);
+
+          const stats = await fs.promises.stat(outputFilePath);
+          const fileSizeInBytes = stats.size;
+
+          if (fileSizeInBytes < 7 * 1024) {
+            compressed = true;
+            console.log(`Compressed and saved ${outputFilePath}`);
+          } else {
+            quality -= 5;
+            if (quality <= 0) {
+              compressed = true; // Stop the loop
+              console.log(`Could not compress ${file} below 7KB without excessive quality loss.`);
+            }
+          }
+        }
+      });
+
+      await Promise.all(compressPromises);
+      resolve();
+    } catch (err) {
+      console.error(err);
+      reject(err);
+    }
+  });
+}
+
+async function createPalette(compressedFramesDir, palletesDir) {
+  const files = await fs.promises.readdir(compressedFramesDir);
+
+  // Create the 'palettes' directory if it doesn't exist
+  const paletteDirectory = palletesDir;
+  if (!fs.existsSync(paletteDirectory)) {
+    fs.mkdirSync(paletteDirectory);
+  }
+
+  // Group files into batches of 9
+  const batches = [];
+  for (let i = 0; i < files.length; i += 9) {
+    batches.push(files.slice(i, i + 9));
+  }
+
+  // Map over batches and create palette of 3 x 3 using ffmpeg
+  for (const [i, batch] of batches.entries()) {
+    const inputFiles = batch.map((file) => `-i ${compressedFramesDir}/${file}`).join(" ");
+    const palettePath = `${paletteDirectory}/batch_${i + 1}_palette.jpeg`;
+
+    exec(`ffmpeg ${inputFiles} -filter_complex "concat=n=${batch.length}:v=1:a=0,scale=iw*3:ih*3:flags=neighbor,tile=3x3" ${palettePath}`, (err) => {
+      if (err) {
+        console.error(`Error creating palette for batch ${i + 1}:`, err);
+      } else {
+        console.log(`Palette created for batch ${i + 1}`);
+      }
+    });
+  }
+}
+
+async function getPreviews(videoPath, videoPathDir, resolutions) {
+  const extractedFramesDir = `${videoPathDir}/extractedFrames`;
+  const compressedFramesDir = `${videoPathDir}/compressed`;
+  const palletesDir = `${videoPathDir}/palletes`;
+  const lowestRes = resolutions[resolutions.length - 1];
+  try {
+    await extractFrames(videoPath, extractedFramesDir);
+    await compressImages(extractedFramesDir, compressedFramesDir, lowestRes);
+    await createPalette(compressedFramesDir, palletesDir);
+  } catch (err) {
+    console.error("An error occurred during processing:", err);
+  }
+}
+
+module.exports = getPreviews;

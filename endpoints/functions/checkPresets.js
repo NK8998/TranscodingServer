@@ -131,20 +131,6 @@ function useSpecialPresets(inputResolution, allResolutions, presetToChange) {
   return specialResolutions;
 }
 
-// // Define the input resolution and all possible resolutions
-
-// let framerate = 24;
-// let inputResolution = { width: 1552, height: 1080, framerate: framerate };
-// const AllResolutions = [
-//   { width: 3840, height: 2160, bitrate: 4000, framerate: framerate, tag: "2160p", supersript: "4k" },
-//   { width: 2560, height: 1440, bitrate: 3000, framerate: framerate, tag: "1440p", supersript: "HD" },
-//   { width: 1920, height: 1080, bitrate: 2500, framerate: framerate, tag: "1080p", supersript: "HD" },
-//   { width: 1280, height: 720, bitrate: 2000, framerate: framerate, tag: "720p", supersript: "" },
-//   { width: 854, height: 480, bitrate: 1000, framerate: framerate, tag: "480p", supersript: "" },
-//   { width: 640, height: 360, bitrate: 800, framerate: framerate, tag: "360p", supersript: "" },
-//   { width: 426, height: 240, bitrate: 400, framerate: framerate, tag: "240p", supersript: "" },
-//   { width: 256, height: 144, bitrate: 200, framerate: framerate, tag: "144p", supersript: "" },
-//   // Add more resolutions as needed
-// ];
+// Define the input resolution and all possible resolutions
 
 module.exports = checkPresets;
