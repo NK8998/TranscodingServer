@@ -195,7 +195,7 @@ const setUpTranscodingJobs = async () => {
     });
   });
   await Promise.all(transcodingPromises);
-  // await removeVideosFromQueue(queuedVideos);
+  await removeVideosFromQueue(queuedVideos);
 
   setUpTranscodingJobs();
 };
