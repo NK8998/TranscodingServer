@@ -7,7 +7,7 @@ const adjustFrameExtraction = (duration) => {
     paletteSize = 3; // set palette size to 3
   } else if (duration <= 300) {
     // for videos of 1-5 minutes
-    extractionRate = 3; // extract a frame every 3 seconds
+    extractionRate = 2; // extract a frame every 2 seconds
     paletteSize = 3; // set palette size to 3
   } else if (duration <= 3600) {
     // for videos of 5 minutes to 1 hour
