@@ -11,7 +11,7 @@ const getVideoInfo = require("./functions/getVideoInfo");
 const uploadChunks = require("./functions/uploadToS3");
 const getVideosInQueue = require("./functions/getVideos");
 const removeVideosFromQueue = require("./functions/removeVideos");
-const { isRunningFunction, isRunning, getPayload } = require("./functions/isRunning");
+const { isRunningFunction } = require("./functions/isRunning");
 const getPreviews = require("./functions/extractFrames");
 const getResolutions = require("./functions/getResolutions");
 const uploadPalletes = require("./functions/uploadPalletes");
@@ -38,25 +38,16 @@ const transcodeAndGenerateMpd = async (videoPath, videoPathDir, videoBitrateKbps
     const outputManifest = `${MpdOutput}/output.mpd`;
     // Check if the output folder exists, if not, create it
     const finalResolutions = resolutions.map((resolution, index) => {
-      let newRes = { ...resolution };
-
-      //make sure framerate never exceeds 30 for resolution less than or equal to 480
-      if (newRes.height <= 480) {
-        newRes.framerate = newRes.framerate > 30 ? 30 : newRes.framerate;
-      }
-      if (!videoBitrateKbps) return newRes;
-
       const length = resolutions.length;
       const calculatedBitrate = Math.round(videoBitrateKbps - index * (videoBitrateKbps / length));
 
-      // Update the bitrate if the current resolution bitrate is greater than the calculated bitrate
-      if (resolution.bitrate > calculatedBitrate) {
-        newRes = { ...newRes, bitrate: Math.min(resolution.bitrate, videoBitrateKbps, calculatedBitrate) };
-
-        return newRes;
-      }
-
-      return newRes;
+      return {
+        ...resolution,
+        // Limit framerate to 30 for resolutions <= 480
+        framerate: resolution.height <= 480 ? Math.min(resolution.framerate, 30) : resolution.framerate,
+        // Update bitrate if necessary
+        bitrate: Math.min(resolution.bitrate, videoBitrateKbps, calculatedBitrate),
+      };
     });
 
     console.log(finalResolutions);
@@ -130,7 +121,7 @@ const downloadVideo = async (video) => {
         reject(err);
       } else {
         const scriptDirectory = __dirname;
-        const folderName = `./folder-${video.video_id}`;
+        const folderName = `./folder${video.video_id}`;
         if (!fs.existsSync(folderName)) {
           fs.mkdirSync(folderName, { recursive: true });
         }
@@ -204,7 +195,7 @@ const setUpTranscodingJobs = async () => {
     });
   });
   await Promise.all(transcodingPromises);
-  await removeVideosFromQueue(queuedVideos);
+  // await removeVideosFromQueue(queuedVideos);
 
   setUpTranscodingJobs();
 };
