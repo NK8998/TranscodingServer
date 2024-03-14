@@ -4,16 +4,16 @@ const fs = require("fs");
 const path = require("path");
 const { exec } = require("child_process");
 
-async function extractFrames(videoPath, extractedFramesDir, extractionRate) {
-  if (!fs.existsSync(extractedFramesDir)) {
-    fs.mkdirSync(extractedFramesDir);
-  }
+async function extractFrameFromBeginning(videoPath, extractedFramePath) {
   return new Promise((resolve, reject) => {
     ffmpeg(videoPath)
-      .outputOptions("-vf", `fps=1/${extractionRate}`) // Extract frame every 5 seconds
-      .output(`${extractedFramesDir}/output_%04d_preview.jpeg`)
+      .outputOptions([
+        "-ss 00:00:00", // Seek to the beginning (adjust time if needed)
+        "-frames:v 1", // Extract only 1 frame
+      ])
+      .output(extractedFramePath)
       .on("end", () => {
-        console.log("Frame extraction complete.");
+        console.log("Frame extraction from beginning complete.");
         resolve();
       })
       .on("error", (err) => {
@@ -22,6 +22,38 @@ async function extractFrames(videoPath, extractedFramesDir, extractionRate) {
       })
       .run();
   });
+}
+
+async function extractFrames(videoPath, extractedFramesDir, extractionRate) {
+  if (!fs.existsSync(extractedFramesDir)) {
+    fs.mkdirSync(extractedFramesDir);
+  }
+
+  try {
+    // Extract frame from the beginning
+    await extractFrameFromBeginning(videoPath, `${extractedFramesDir}/output_0001_preview.jpeg`);
+
+    // Extract frames based on extractionRate
+    await new Promise((resolve, reject) => {
+      ffmpeg(videoPath)
+        .outputOptions(["-vf", `fps=1/${extractionRate}`, "-start_number 2"])
+        .output(`${extractedFramesDir}/output_%04d_preview.jpeg`) // Include %04d for padding
+        .on("end", () => {
+          console.log("Frame extraction complete.");
+          resolve();
+        })
+        .on("error", (err) => {
+          console.error(err);
+          reject(err);
+        })
+        .run();
+    });
+
+    console.log("Frame extraction complete.");
+  } catch (err) {
+    console.error(err);
+    throw err;
+  }
 }
 
 // 110
