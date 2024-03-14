@@ -16,6 +16,9 @@ const getPreviews = require("./functions/extractFrames");
 const getResolutions = require("./functions/getResolutions");
 const uploadPalletes = require("./functions/uploadPalletes");
 const adjustFrameExtraction = require("./functions/adjustFrameExtraction");
+const extractThumbnails = require("./functions/extractThumbnails");
+const uploadToSupabase = require("./functions/uploadToSupabase");
+const getDurationStamp = require("./functions/getDurationStamp");
 
 require("dotenv").config();
 ffmpeg.setFfmpegPath(require("ffmpeg-static"));
@@ -136,6 +139,7 @@ const downloadVideo = async (video) => {
 
 const generateMPDandUpload = async (video) => {
   try {
+    const video_id = video.video_id;
     const videoPath = await downloadVideo(video);
     const videoPathDir = path.dirname(videoPath);
 
@@ -147,19 +151,25 @@ const generateMPDandUpload = async (video) => {
     const inputResolution = { width: width, height: height, framerate: framerate };
 
     const resolutions = getResolutions(inputResolution);
-    console.log(resolutions);
-    const priviewAdjustments = adjustFrameExtraction(duration);
 
-    await getPreviews(videoPath, videoPathDir, resolutions, priviewAdjustments);
+    const previewAdjustments = adjustFrameExtraction(duration);
+
+    await getPreviews(videoPath, videoPathDir, resolutions, previewAdjustments);
+
+    const possibleThumbnailsUrls = await extractThumbnails(videoPathDir, video_id);
 
     await transcodeAndGenerateMpd(videoPath, videoPathDir, videoBitrateKbps, resolutions);
 
-    const mpdUrl = await uploadChunks(videoPathDir, video.video_id);
+    const mpdUrl = await uploadChunks(videoPathDir, video_id);
 
-    await uploadPalletes(videoPathDir, video.video_id);
+    const paletteUrls = await uploadPalletes(videoPathDir, video_id);
 
-    console.log(mpdUrl, video.video_id, duration);
+    const aspectRatio = Math.round((width / height) * 1000) / 1000;
+
+    const timestamp = getDurationStamp(Math.round(duration));
     // upload to supabase
+
+    await uploadToSupabase(video_id, resolutions, previewAdjustments, mpdUrl, paletteUrls, possibleThumbnailsUrls, aspectRatio, duration, timestamp);
     fs.rmSync(videoPathDir, { recursive: true });
   } catch (error) {
     console.log(error);

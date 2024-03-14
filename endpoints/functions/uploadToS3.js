@@ -31,7 +31,7 @@ const uploadChunks = async (videoPathDir, title) => {
 
       if (mpd) {
         const mpdUrl = uploadResponse.Location;
-        return { mpdUrl: mpdUrl };
+        return mpdUrl;
       }
     } catch (err) {
       console.error("Error uploading file:", err.message);
