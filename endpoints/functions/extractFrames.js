@@ -130,13 +130,14 @@ async function createPalette(compressedFramesDir, palletesDir, paletteSize) {
     // ... (your existing code to create file batches)
 
     for (const [i, batch] of batches.entries()) {
+      const batchNumber = (i + 1).toString().padStart(3, "0"); // Pad the batch number with leading zeros
       const inputFiles = batch.map((file) => `-i ${compressedFramesDir}/${file}`).join(" ");
-      const palettePath = `${paletteDirectory}/batch_${i + 1}_palette.jpeg`;
+      const palettePath = `${paletteDirectory}/batch_${batchNumber}_palette.jpeg`;
 
       try {
         await new Promise((resolve, reject) => {
           exec(
-            `ffmpeg ${inputFiles} -filter_complex "concat=n=${batch.length}:v=1:a=0,scale=iw*${paletteSize}:ih*${paletteSize}:flags=neighbor,tile=${paletteSize}x${paletteSize}" ${palettePath}`,
+            `ffmpeg ${inputFiles} -filter_complex "concat=n=${batch.length}:v=1:a=0,scale=iw*${paletteSize}:ih*${paletteSize}:flags=neighbor,tile=${paletteSize}x${paletteSize}" -q:v 1 -vf "scale=-1:-1:flags=lanczos,setsar=1:1" ${palettePath}`,
             (err) => {
               if (err) {
                 reject(err);

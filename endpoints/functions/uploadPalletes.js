@@ -31,8 +31,8 @@ const uploadPalletes = async (videoPathDir, title) => {
     try {
       const uploadResponse = await s3.upload(params).promise();
       const palleteUrl = uploadResponse.Location;
-      const palleteNum = `palleteUrl-${i}`;
-      palleteUrls[palleteNum] = palleteUrl;
+      console.log(palleteUrl);
+      return palleteUrl;
     } catch (err) {
       console.error("Error uploading file:", err.message);
       return null;
@@ -40,14 +40,17 @@ const uploadPalletes = async (videoPathDir, title) => {
   }
 
   const files = await fs.promises.readdir(palletesDir);
-
-  let i = 0;
-  for (const file of files) {
+  const uploadPromises = files.map((file, i) => {
     const filePath = path.join(palletesDir, file);
     const destination = `${title}/palletes/${file}`;
-    await uploadFile(filePath, destination, i);
-    i++;
-  }
+    return uploadFile(filePath, destination, i);
+  });
+
+  const urls = await Promise.all(uploadPromises);
+  urls.forEach((url, i) => {
+    const palleteNum = `palleteUrl-${i}`;
+    palleteUrls[palleteNum] = url;
+  });
 
   return palleteUrls;
 };
