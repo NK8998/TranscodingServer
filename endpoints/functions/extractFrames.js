@@ -86,7 +86,7 @@ async function compressImages(extractedFramesDir, compressedFramesDir, lowestRes
           const stats = await fs.promises.stat(outputFilePath);
           const fileSizeInBytes = stats.size;
 
-          if (fileSizeInBytes < 7 * 1024) {
+          if (fileSizeInBytes < 4 * 1024) {
             compressed = true;
             console.log(`Compressed and saved ${outputFilePath}`);
           } else {
