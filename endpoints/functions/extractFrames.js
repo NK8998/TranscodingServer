@@ -31,9 +31,7 @@ async function extractFrames(videoPath, extractedFramesDir, extractionRate) {
 
   try {
     // Extract frame from the beginning
-    if (extractionRate !== 1) {
-      await extractFrameFromBeginning(videoPath, `${extractedFramesDir}/output_0000_preview.jpeg`);
-    }
+    await extractFrameFromBeginning(videoPath, `${extractedFramesDir}/output_0000_preview.jpeg`);
 
     // Extract frames based on extractionRate
     await new Promise((resolve, reject) => {
