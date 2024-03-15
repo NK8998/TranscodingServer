@@ -38,7 +38,12 @@ async function extractFrames(videoPath, extractedFramesDir, extractionRate) {
     // Extract frames based on extractionRate
     await new Promise((resolve, reject) => {
       ffmpeg(videoPath)
-        .outputOptions(["-vf", `fps=1/${extractionRate}`])
+        .outputOptions([
+          "-ss",
+          `00:00:${extractionRate}`, // Start extraction from extractionRate seconds into the video
+          "-vf",
+          `fps=1/${extractionRate}`,
+        ])
         .output(`${extractedFramesDir}/output_%04d_preview.jpeg`) // Include %04d for padding
         .on("end", () => {
           console.log("Frame extraction complete.");
