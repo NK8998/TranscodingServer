@@ -31,12 +31,14 @@ async function extractFrames(videoPath, extractedFramesDir, extractionRate) {
 
   try {
     // Extract frame from the beginning
-    await extractFrameFromBeginning(videoPath, `${extractedFramesDir}/output_0001_preview.jpeg`);
+    if (extractionRate !== 1) {
+      await extractFrameFromBeginning(videoPath, `${extractedFramesDir}/output_0000_preview.jpeg`);
+    }
 
     // Extract frames based on extractionRate
     await new Promise((resolve, reject) => {
       ffmpeg(videoPath)
-        .outputOptions(["-vf", `fps=1/${extractionRate}`, "-start_number 2"])
+        .outputOptions(["-vf", `fps=1/${extractionRate}`])
         .output(`${extractedFramesDir}/output_%04d_preview.jpeg`) // Include %04d for padding
         .on("end", () => {
           console.log("Frame extraction complete.");
