@@ -6,14 +6,13 @@ const path = require("path");
 const ffmpeg = require("fluent-ffmpeg");
 const ffprobePath = require("@ffprobe-installer/ffprobe").path;
 ffmpeg.setFfprobePath(ffprobePath);
-const checkPresets = require("./functions/checkPresets");
 const getVideoInfo = require("./functions/getVideoInfo");
 const uploadChunks = require("./functions/uploadToS3");
 const getVideosInQueue = require("./functions/getVideos");
 const removeVideosFromQueue = require("./functions/removeVideos");
 const { isRunningFunction } = require("./functions/isRunning");
 const getPreviews = require("./functions/extractFrames");
-const getResolutions = require("./functions/getResolutions");
+const { getResolutions, getAllResolutions } = require("./functions/getResolutions");
 const uploadPalletes = require("./functions/uploadPalletes");
 const adjustFrameExtraction = require("./functions/adjustFrameExtraction");
 const extractThumbnails = require("./functions/extractThumbnails");
@@ -152,9 +151,11 @@ const generateMPDandUpload = async (video) => {
 
     const resolutions = getResolutions(inputResolution);
 
+    const allResolutions = getAllResolutions(inputResolution);
+
     const previewAdjustments = adjustFrameExtraction(duration);
 
-    await getPreviews(videoPath, videoPathDir, resolutions, previewAdjustments);
+    await getPreviews(videoPath, videoPathDir, allResolutions, previewAdjustments);
 
     const possibleThumbnailsUrls = await extractThumbnails(videoPathDir, video_id);
 
@@ -206,7 +207,7 @@ const setUpTranscodingJobs = async () => {
     });
   });
   await Promise.all(transcodingPromises);
-  await removeVideosFromQueue(queuedVideos);
+  // await removeVideosFromQueue(queuedVideos);
 
   setUpTranscodingJobs();
 };

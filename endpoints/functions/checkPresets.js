@@ -133,4 +133,4 @@ function useSpecialPresets(inputResolution, allResolutions, presetToChange) {
 
 // Define the input resolution and all possible resolutions
 
-module.exports = checkPresets;
+module.exports = { checkPresets, roundToEven };

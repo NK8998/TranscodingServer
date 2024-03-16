@@ -3,13 +3,18 @@ const sharp = require("sharp");
 const fs = require("fs");
 const path = require("path");
 const { exec } = require("child_process");
+const { roundToEven } = require("./checkPresets");
 
-async function extractFrameFromBeginning(videoPath, extractedFramePath) {
+async function extractFrameFromBeginning(videoPath, extractedFramePath, lowestRes) {
+  const { height, width } = lowestRes;
+
   return new Promise((resolve, reject) => {
     ffmpeg(videoPath)
       .outputOptions([
         "-ss 00:00:00", // Seek to the beginning (adjust time if needed)
         "-frames:v 1", // Extract only 1 frame
+        "-vf",
+        `scale=${width}:${height}`,
       ])
       .output(extractedFramePath)
       .on("end", () => {
@@ -24,14 +29,16 @@ async function extractFrameFromBeginning(videoPath, extractedFramePath) {
   });
 }
 
-async function extractFrames(videoPath, extractedFramesDir, extractionRate) {
+async function extractFrames(videoPath, extractedFramesDir, extractionRate, lowestRes) {
+  const { height, width } = lowestRes;
+
   if (!fs.existsSync(extractedFramesDir)) {
     fs.mkdirSync(extractedFramesDir);
   }
 
   try {
     // Extract frame from the beginning
-    await extractFrameFromBeginning(videoPath, `${extractedFramesDir}/output_0000_preview.jpeg`);
+    await extractFrameFromBeginning(videoPath, `${extractedFramesDir}/output_0000_preview.jpeg`, lowestRes);
 
     // Extract frames based on extractionRate
     await new Promise((resolve, reject) => {
@@ -40,7 +47,7 @@ async function extractFrames(videoPath, extractedFramesDir, extractionRate) {
           "-ss",
           `00:00:${extractionRate}`, // Start extraction from extractionRate seconds into the video
           "-vf",
-          `fps=1/${extractionRate}`,
+          `fps=1/${extractionRate},scale=${width}:${height}`,
         ])
         .output(`${extractedFramesDir}/output_%04d_preview.jpeg`) // Include %04d for padding
         .on("end", () => {
@@ -63,19 +70,19 @@ async function extractFrames(videoPath, extractedFramesDir, extractionRate) {
 
 // 110
 
-async function compressImages(extractedFramesDir, compressedFramesDir, lowestRes) {
-  const { height, width } = lowestRes;
+async function compressPalettes(palletesDir, compressedPalletesDir, mediumRes) {
+  const { width, height } = mediumRes;
   return new Promise(async (resolve, reject) => {
     try {
-      const files = await fs.promises.readdir(extractedFramesDir);
-      await fs.promises.mkdir(compressedFramesDir, { recursive: true });
+      const files = await fs.promises.readdir(palletesDir);
+      await fs.promises.mkdir(compressedPalletesDir, { recursive: true });
 
       const compressPromises = files.map(async (file) => {
-        const inputFilePath = path.join(extractedFramesDir, file);
-        let outputFilePath = path.join(compressedFramesDir, file);
+        const inputFilePath = path.join(palletesDir, file);
+        let outputFilePath = path.join(compressedPalletesDir, file);
 
         let compressed = false;
-        let quality = 80; // Starting quality
+        let quality = 100; // Starting quality
 
         while (!compressed) {
           await sharp(inputFilePath)
@@ -86,14 +93,14 @@ async function compressImages(extractedFramesDir, compressedFramesDir, lowestRes
           const stats = await fs.promises.stat(outputFilePath);
           const fileSizeInBytes = stats.size;
 
-          if (fileSizeInBytes < 4 * 1024) {
+          if (fileSizeInBytes < 110 * 1024) {
             compressed = true;
             console.log(`Compressed and saved ${outputFilePath}`);
           } else {
             quality -= 5;
-            if (quality <= 0) {
+            if (quality <= 20) {
               compressed = true; // Stop the loop
-              console.log(`Could not compress ${file} below 7KB without excessive quality loss.`);
+              console.log(`Could not compress ${file} below 150KB without excessive quality loss.`);
             }
           }
         }
@@ -108,9 +115,9 @@ async function compressImages(extractedFramesDir, compressedFramesDir, lowestRes
   });
 }
 
-async function createPalette(compressedFramesDir, palletesDir, paletteSize) {
+async function createPalette(extractedFramesDir, palletesDir, paletteSize) {
   try {
-    const files = await fs.promises.readdir(compressedFramesDir);
+    const files = await fs.promises.readdir(extractedFramesDir);
 
     // Create the 'palettes' directory if it doesn't exist
     const paletteDirectory = palletesDir;
@@ -129,13 +136,13 @@ async function createPalette(compressedFramesDir, palletesDir, paletteSize) {
 
     for (const [i, batch] of batches.entries()) {
       const batchNumber = (i + 1).toString().padStart(3, "0"); // Pad the batch number with leading zeros
-      const inputFiles = batch.map((file) => `-i ${compressedFramesDir}/${file}`).join(" ");
+      const inputFiles = batch.map((file) => `-i ${extractedFramesDir}/${file}`).join(" ");
       const palettePath = `${paletteDirectory}/batch_${batchNumber}_palette.jpeg`;
 
       try {
         await new Promise((resolve, reject) => {
           exec(
-            `ffmpeg ${inputFiles} -filter_complex "concat=n=${batch.length}:v=1:a=0,scale=iw*${paletteSize}:ih*${paletteSize}:flags=neighbor,tile=${paletteSize}x${paletteSize},scale=-1:-1:flags=lanczos,setsar=1:1" ${palettePath}`,
+            `ffmpeg ${inputFiles} -filter_complex "concat=n=${batch.length}:v=1:a=0,scale=iw*${paletteSize}:ih*${paletteSize}:flags=neighbor,tile=${paletteSize}x${paletteSize},scale=-1:-1:flags=lanczos,setsar=1:1" -q:v 31 ${palettePath}`,
             (err) => {
               if (err) {
                 reject(err);
@@ -189,16 +196,22 @@ async function createPalette(compressedFramesDir, palletesDir, paletteSize) {
 //   }
 // }
 
-async function getPreviews(videoPath, videoPathDir, resolutions, priviewAdjustments) {
+async function getPreviews(videoPath, videoPathDir, allResolutions, priviewAdjustments) {
   const { extractionRate, paletteSize } = priviewAdjustments;
   const extractedFramesDir = `${videoPathDir}/extractedFrames`;
-  const compressedFramesDir = `${videoPathDir}/compressed`;
+  const compressedPalletesDir = `${videoPathDir}/compressedPalletes`;
   const palletesDir = `${videoPathDir}/palletes`;
-  const lowestRes = resolutions[resolutions.length - 1];
+  const length = allResolutions.length;
+  const lowestRes = allResolutions[length - 1];
+  const { width, height } = lowestRes;
+  const aspectRatio = width / height;
+  const medWidth = 850;
+  const medHeight = 850 * (1 / aspectRatio);
+  const mediumRes = { width: roundToEven(Math.floor(medWidth)), height: roundToEven(Math.floor(medHeight)) };
   try {
-    await extractFrames(videoPath, extractedFramesDir, extractionRate);
-    await compressImages(extractedFramesDir, compressedFramesDir, lowestRes);
-    await createPalette(compressedFramesDir, palletesDir, paletteSize);
+    await extractFrames(videoPath, extractedFramesDir, extractionRate, lowestRes);
+    await createPalette(extractedFramesDir, palletesDir, paletteSize);
+    await compressPalettes(palletesDir, compressedPalletesDir, mediumRes);
   } catch (err) {
     console.error("An error occurred during processing:", err);
   }

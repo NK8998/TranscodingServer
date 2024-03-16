@@ -14,7 +14,7 @@ const s3 = new AWS.S3({
 });
 
 const uploadPalletes = async (videoPathDir, title) => {
-  const palletesDir = `${videoPathDir}/palletes`;
+  const palletesDir = `${videoPathDir}/compressedPalletes`;
   let palleteUrls = {};
 
   async function uploadFile(filePath, destinationPath, i) {
