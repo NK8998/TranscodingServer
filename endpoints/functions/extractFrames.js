@@ -93,14 +93,14 @@ async function compressPalettes(palletesDir, compressedPalletesDir, mediumRes) {
           const stats = await fs.promises.stat(outputFilePath);
           const fileSizeInBytes = stats.size;
 
-          if (fileSizeInBytes < 110 * 1024) {
+          if (fileSizeInBytes < 90 * 1024) {
             compressed = true;
             console.log(`Compressed and saved ${outputFilePath}`);
           } else {
             quality -= 5;
-            if (quality <= 20) {
+            if (quality <= 40) {
               compressed = true; // Stop the loop
-              console.log(`Could not compress ${file} below 150KB without excessive quality loss.`);
+              console.log(`Could not compress ${file} below 90KB without excessive quality loss.`);
             }
           }
         }
@@ -142,7 +142,7 @@ async function createPalette(extractedFramesDir, palletesDir, paletteSize) {
       try {
         await new Promise((resolve, reject) => {
           exec(
-            `ffmpeg ${inputFiles} -filter_complex "concat=n=${batch.length}:v=1:a=0,scale=iw*${paletteSize}:ih*${paletteSize}:flags=neighbor,tile=${paletteSize}x${paletteSize},scale=-1:-1:flags=lanczos,setsar=1:1" -q:v 31 ${palettePath}`,
+            `ffmpeg ${inputFiles} -filter_complex "concat=n=${batch.length}:v=1:a=0,scale=iw*${paletteSize}:ih*${paletteSize}:flags=neighbor,tile=${paletteSize}x${paletteSize},scale=-1:-1:flags=lanczos,setsar=1:1" -q:v 20 ${palettePath}`,
             (err) => {
               if (err) {
                 reject(err);
