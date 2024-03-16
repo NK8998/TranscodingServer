@@ -142,7 +142,7 @@ async function createPalette(extractedFramesDir, palletesDir, paletteSize) {
       try {
         await new Promise((resolve, reject) => {
           exec(
-            `ffmpeg ${inputFiles} -filter_complex "concat=n=${batch.length}:v=1:a=0,scale=iw*${paletteSize}:ih*${paletteSize}:flags=neighbor,tile=${paletteSize}x${paletteSize},scale=-1:-1:flags=lanczos,setsar=1:1" -q:v 20 ${palettePath}`,
+            `ffmpeg ${inputFiles} -filter_complex "concat=n=${batch.length}:v=1:a=0,scale=iw*${paletteSize}:ih*${paletteSize}:flags=neighbor,tile=${paletteSize}x${paletteSize},scale=-1:-1:flags=lanczos,setsar=1:1" -q:v 2 ${palettePath}`,
             (err) => {
               if (err) {
                 reject(err);
