@@ -5,8 +5,8 @@ const path = require("path");
 const { exec } = require("child_process");
 const { roundToEven } = require("./checkPresets");
 
-async function extractFrameFromBeginning(videoPath, extractedFramePath, lowestRes) {
-  const { height, width } = lowestRes;
+async function extractFrameFromBeginning(videoPath, extractedFramePath, mediumRes) {
+  const { height, width } = mediumRes;
 
   return new Promise((resolve, reject) => {
     ffmpeg(videoPath)
@@ -38,7 +38,7 @@ async function extractFrames(videoPath, extractedFramesDir, extractionRate, medi
 
   try {
     // Extract frame from the beginning
-    await extractFrameFromBeginning(videoPath, `${extractedFramesDir}/output_0000_preview.jpeg`, lowestRes);
+    await extractFrameFromBeginning(videoPath, `${extractedFramesDir}/output_0000_preview.jpeg`, mediumRes);
 
     // Extract frames based on extractionRate
     await new Promise((resolve, reject) => {
