@@ -187,6 +187,7 @@ const setUpTranscodingJobs = async () => {
   queuedVideos = (await getVideosInQueue()) || [];
 
   if (queuedVideos.length === 0) {
+    isRunningFunction(false);
     timeoutId = setTimeout(() => {
       shutInstance();
     }, 1000 * 60 * 15);
