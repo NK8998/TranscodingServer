@@ -18,6 +18,7 @@ const adjustFrameExtraction = require("./functions/adjustFrameExtraction");
 const extractThumbnails = require("./functions/extractThumbnails");
 const uploadToSupabase = require("./functions/uploadToSupabase");
 const getDurationStamp = require("./functions/getDurationStamp");
+const shutInstance = require("./functions/shutInstace");
 
 require("dotenv").config();
 ffmpeg.setFfmpegPath(require("ffmpeg-static"));
@@ -178,6 +179,7 @@ const generateMPDandUpload = async (video) => {
 };
 
 let interValId;
+let timeoutId;
 const setUpTranscodingJobs = async () => {
   console.log("running");
   isRunningFunction(true);
@@ -185,10 +187,16 @@ const setUpTranscodingJobs = async () => {
   queuedVideos = (await getVideosInQueue()) || [];
 
   if (queuedVideos.length === 0) {
+    timeoutId = setTimeout(() => {
+      shutInstance();
+    }, 1000 * 60 * 15);
     interValId = setInterval(() => {
       console.log("dummy task");
     }, 1000 * 60 * 60);
     return;
+  }
+  if (timeoutId) {
+    clearTimeout(timeoutId);
   }
 
   if (interValId) {
