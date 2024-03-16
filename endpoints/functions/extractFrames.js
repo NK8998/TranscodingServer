@@ -29,8 +29,8 @@ async function extractFrameFromBeginning(videoPath, extractedFramePath, lowestRe
   });
 }
 
-async function extractFrames(videoPath, extractedFramesDir, extractionRate, lowestRes) {
-  const { height, width } = lowestRes;
+async function extractFrames(videoPath, extractedFramesDir, extractionRate, mediumRes) {
+  const { height, width } = mediumRes;
 
   if (!fs.existsSync(extractedFramesDir)) {
     fs.mkdirSync(extractedFramesDir);
@@ -209,7 +209,7 @@ async function getPreviews(videoPath, videoPathDir, allResolutions, priviewAdjus
   const medHeight = 850 * (1 / aspectRatio);
   const mediumRes = { width: roundToEven(Math.floor(medWidth)), height: roundToEven(Math.floor(medHeight)) };
   try {
-    await extractFrames(videoPath, extractedFramesDir, extractionRate, lowestRes);
+    await extractFrames(videoPath, extractedFramesDir, extractionRate, mediumRes);
     await createPalette(extractedFramesDir, palletesDir, paletteSize);
     await compressPalettes(palletesDir, compressedPalletesDir, mediumRes);
   } catch (err) {
