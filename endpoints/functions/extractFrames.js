@@ -115,7 +115,9 @@ async function compressPalettes(palletesDir, compressedPalletesDir, mediumRes) {
   });
 }
 
-async function createPalette(extractedFramesDir, palletesDir, paletteSize) {
+async function createPalette(extractedFramesDir, palletesDir, paletteSize, mediumRes) {
+  const { width, height } = mediumRes;
+
   try {
     const files = await fs.promises.readdir(extractedFramesDir);
 
@@ -142,7 +144,7 @@ async function createPalette(extractedFramesDir, palletesDir, paletteSize) {
       try {
         await new Promise((resolve, reject) => {
           exec(
-            `ffmpeg ${inputFiles} -filter_complex "concat=n=${batch.length}:v=1:a=0,scale=iw*${paletteSize}:ih*${paletteSize}:flags=neighbor,tile=${paletteSize}x${paletteSize},scale=-1:-1:flags=lanczos,setsar=1:1" -q:v 2 ${palettePath}`,
+            `ffmpeg ${inputFiles} -filter_complex "concat=n=${batch.length}:v=1:a=0,scale=iw*${paletteSize}:ih*${paletteSize}:flags=neighbor,tile=${paletteSize}x${paletteSize},scale=${width}:${height}:flags=lanczos,setsar=1:1" -q:v 2 ${palettePath}`,
             (err) => {
               if (err) {
                 reject(err);
@@ -205,12 +207,12 @@ async function getPreviews(videoPath, videoPathDir, allResolutions, priviewAdjus
   const lowestRes = allResolutions[length - 1];
   const { width, height } = lowestRes;
   const aspectRatio = width / height;
-  const medWidth = 850;
-  const medHeight = 850 * (1 / aspectRatio);
+  const medWidth = 852;
+  const medHeight = 852 * (1 / aspectRatio);
   const mediumRes = { width: roundToEven(Math.floor(medWidth)), height: roundToEven(Math.floor(medHeight)) };
   try {
     await extractFrames(videoPath, extractedFramesDir, extractionRate, mediumRes);
-    await createPalette(extractedFramesDir, palletesDir, paletteSize);
+    await createPalette(extractedFramesDir, palletesDir, paletteSize, mediumRes);
     await compressPalettes(palletesDir, compressedPalletesDir, mediumRes);
   } catch (err) {
     console.error("An error occurred during processing:", err);
