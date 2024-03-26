@@ -8,8 +8,6 @@ const ffprobePath = require("@ffprobe-installer/ffprobe").path;
 ffmpeg.setFfprobePath(ffprobePath);
 const getVideoInfo = require("./functions/getVideoInfo");
 const uploadChunks = require("./functions/uploadToS3");
-const getVideosInQueue = require("./functions/getVideos");
-const removeVideosFromQueue = require("./functions/removeVideos");
 const { isRunningFunction } = require("./functions/isRunning");
 const getPreviews = require("./functions/extractFrames");
 const { getResolutions, getAllResolutions } = require("./functions/getResolutions");
@@ -180,13 +178,11 @@ const generateMPDandUpload = async (video) => {
 
 let interValId;
 let timeoutId;
-const setUpTranscodingJobs = async () => {
+
+const setUpTranscodingJobs = async (data) => {
   console.log("running");
   isRunningFunction(true);
-
-  queuedVideos = (await getVideosInQueue()) || [];
-
-  if (queuedVideos.length === 0) {
+  if (data.length === 0) {
     isRunningFunction(false);
     timeoutId = setTimeout(() => {
       shutInstance();
@@ -203,21 +199,38 @@ const setUpTranscodingJobs = async () => {
   if (interValId) {
     clearInterval(interValId);
   }
-  const transcodingPromises = queuedVideos.map((video) => {
-    return new Promise(async (resolve, reject) => {
-      try {
-        const result = await generateMPDandUpload(video);
-        resolve(result);
-      } catch (error) {
-        console.error(`Error processing video ${video.video_id}: ${error}`);
-        resolve(null); // Resolve with null on error
-        // update the error field in video-metadata table and inform user.
-      }
-    });
-  });
-  await Promise.all(transcodingPromises);
-  await removeVideosFromQueue(queuedVideos);
 
-  setUpTranscodingJobs();
+  const setUpJob = async (video) => {
+    try {
+      await generateMPDandUpload(video);
+      const { removeJob } = require("./functions/queueController");
+      await removeJob(video);
+    } catch (err) {
+      console.error("Error in setUpJob for video:", video, "Error:", err);
+      // Handle error appropriately here
+    }
+  };
+
+  for (const video of data) {
+    setUpJob(video);
+  }
+
+  // const transcodingPromises = queuedVideos.map((video) => {
+  //   return new Promise(async (resolve, reject) => {
+  //     try {
+  //       const result = await generateMPDandUpload(video);
+  //       resolve(result);
+  //     } catch (error) {
+  //       console.error(`Error processing video ${video.video_id}: ${error}`);
+  //       resolve(null); // Resolve with null on error
+  //       // update the error field in video-metadata table and inform user.
+  //     }
+  //   });
+  // });
+  // await Promise.all(transcodingPromises);
+  // await removeVideosFromQueue(queuedVideos);
+
+  // setUpTranscodingJobs();
 };
-module.exports = setUpTranscodingJobs;
+
+module.exports = { setUpTranscodingJobs, generateMPDandUpload };
