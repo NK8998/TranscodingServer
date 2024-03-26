@@ -13,8 +13,8 @@ const updateInternalQueue = (data) => {
   }
 };
 
-const getInternalQueue = () => {
-  return internalQueue;
+const getCurrentJobs = () => {
+  return currentJobs;
 };
 
 const startJobs = async () => {
@@ -53,4 +53,4 @@ async function removeJob(videoToRemove) {
   addJob(videoToAdd);
 }
 
-module.exports = { updateInternalQueue, getInternalQueue, startJobs, removeJob };
+module.exports = { updateInternalQueue, getCurrentJobs, startJobs, removeJob };
