@@ -1,4 +1,3 @@
-const { getIsRunning, updatePayload } = require("./endpoints/functions/isRunning");
 const { createClient } = require("@supabase/supabase-js");
 const { updateInternalQueue, startJobs } = require("./endpoints/functions/queueController");
 require("dotenv").config();

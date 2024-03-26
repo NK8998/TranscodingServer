@@ -64,7 +64,7 @@ function adjustPresets(inputResolution, allResolutions, presetToChange) {
         width: newWidth,
         height: preset.height,
         bitrate: preset.bitrate,
-        framerate: inputResolution.framerate,
+        framerate: preset.framerate,
         tag: preset.tag,
         supersript: preset.supersript,
       };
@@ -79,7 +79,7 @@ function adjustPresets(inputResolution, allResolutions, presetToChange) {
         width: preset.width,
         height: newHeight,
         bitrate: preset.bitrate,
-        framerate: inputResolution.framerate,
+        framerate: preset.framerate,
         tag: preset.tag,
         supersript: preset.supersript,
       };
@@ -120,7 +120,7 @@ function useSpecialPresets(inputResolution, allResolutions, presetToChange) {
       width: roundToEven(Math.round(preset.height * aspectRatio)),
       height: roundToEven(Math.round(preset.width * aspectRatio)),
       bitrate: preset.bitrate,
-      framerate: inputResolution.framerate,
+      framerate: preset.framerate,
       tag: preset.tag,
       supersript: preset.supersript,
     };
