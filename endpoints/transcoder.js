@@ -184,7 +184,7 @@ const setUpTranscodingJobs = async (data) => {
   isRunningFunction(true);
   const { getCurrentJobs } = require("./functions/queueController");
   const currentJobs = getCurrentJobs();
-  if (currentJobs.length === 0) {
+  if (currentJobs.length === 0 && data.length === 0) {
     isRunningFunction(false);
     timeoutId = setTimeout(() => {
       shutInstance();
