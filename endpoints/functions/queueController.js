@@ -36,6 +36,10 @@ const startJobs = async () => {
   for (const video of firstFiveVideos) {
     addJob(video);
   }
+  if (firstFiveVideos.length === 0) {
+    setUpTranscodingJobs([]);
+  }
+
   // get first five and set up transcoding tasks
 };
 
