@@ -1,24 +1,41 @@
 const AWS = require("aws-sdk");
 const { retrieveInstanceId } = require("./getInstanceId");
 require("dotenv").config();
+const ec2 = new AWS.EC2({ region: "ap-south-1" });
 
 let retries = 0;
-const shutInstance = async () => {
-  const ec2 = new AWS.EC2({ region: "ap-south-1" });
 
+const terminateInstance = async (instanceId) => {
+  const instanceData = await ec2.describeInstances({ InstanceIds: [instanceId] }).promise();
+  const state = instanceData.Reservations[0].Instances[0].State.Name;
+
+  if (state === "running") {
+    await ec2.terminateInstances({ InstanceIds: [instanceId] }).promise();
+    console.log(`Terminated instance: ${instanceId}`);
+  } else {
+    console.log(`Instance ${instanceId} is already in the desired state: ${state}`);
+  }
+};
+
+const stopInstance = async (instanceId) => {
+  const instanceData = await ec2.describeInstances({ InstanceIds: [instanceId] }).promise();
+  const state = instanceData.Reservations[0].Instances[0].State.Name;
+
+  if (state === "running") {
+    await ec2.stopInstances({ InstanceIds: [instanceId] }).promise();
+    console.log(`Stopped instance: ${instanceId}`);
+  } else {
+    console.log(`Instance ${instanceId} is already in the desired state: ${state}`);
+  }
+};
+const shutInstance = async () => {
   try {
     const thisInstanceId = retrieveInstanceId();
     const instanceId = process.env.INSTANCE_ID;
-    if (instanceId !== thisInstanceId) return;
-
-    const instanceData = await ec2.describeInstances({ InstanceIds: [instanceId] }).promise();
-    const state = instanceData.Reservations[0].Instances[0].State.Name;
-
-    if (state === "running") {
-      await ec2.stopInstances({ InstanceIds: [instanceId] }).promise();
-      console.log(`Stopped instance: ${instanceId}`);
+    if (instanceId !== thisInstanceId) {
+      terminateInstance(thisInstanceId);
     } else {
-      console.log(`Instance ${instanceId} is already in the desired state: ${state}`);
+      stopInstance(instanceId);
     }
   } catch (error) {
     retries++;
