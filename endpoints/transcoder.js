@@ -17,6 +17,7 @@ const extractThumbnails = require("./functions/extractThumbnails");
 const uploadToSupabase = require("./functions/uploadToSupabase");
 const getDurationStamp = require("./functions/getDurationStamp");
 const shutInstance = require("./functions/shutInstace");
+const checkRunningInstances = require("./functions/checkRunningInstances");
 
 require("dotenv").config();
 ffmpeg.setFfmpegPath(require("ffmpeg-static"));
@@ -180,6 +181,13 @@ let interValId;
 let timeoutId;
 
 const setUpTranscodingJobs = async (data) => {
+  if (timeoutId) {
+    clearTimeout(timeoutId);
+  }
+
+  if (interValId) {
+    clearInterval(interValId);
+  }
   console.log("running");
   isRunningFunction(true);
   const { getCurrentJobs } = require("./functions/queueController");
@@ -197,13 +205,6 @@ const setUpTranscodingJobs = async (data) => {
       console.log("dummy task");
     }, 1000 * 60 * 60);
     return;
-  }
-  if (timeoutId) {
-    clearTimeout(timeoutId);
-  }
-
-  if (interValId) {
-    clearInterval(interValId);
   }
 
   const setUpJob = async (video) => {

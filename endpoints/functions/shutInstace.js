@@ -1,5 +1,7 @@
 const AWS = require("aws-sdk");
 const { retrieveInstanceId } = require("./getInstanceId");
+const checkRunningInstances = require("./checkRunningInstances");
+const { setUpTranscodingJobs } = require("../transcoder");
 require("dotenv").config();
 const ec2 = new AWS.EC2({ region: "ap-south-1" });
 
@@ -18,6 +20,11 @@ const terminateInstance = async (instanceId) => {
 };
 
 const stopInstance = async (instanceId) => {
+  const otherRunningInstancesExist = await checkRunningInstances();
+  if (otherRunningInstancesExist) {
+    setUpTranscodingJobs([]);
+    return;
+  }
   const instanceData = await ec2.describeInstances({ InstanceIds: [instanceId] }).promise();
   const state = instanceData.Reservations[0].Instances[0].State.Name;
 
