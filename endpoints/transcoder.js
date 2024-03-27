@@ -17,7 +17,6 @@ const extractThumbnails = require("./functions/extractThumbnails");
 const uploadToSupabase = require("./functions/uploadToSupabase");
 const getDurationStamp = require("./functions/getDurationStamp");
 const shutInstance = require("./functions/shutInstace");
-const checkRunningInstances = require("./functions/checkRunningInstances");
 
 require("dotenv").config();
 ffmpeg.setFfmpegPath(require("ffmpeg-static"));
