@@ -2,6 +2,9 @@ const { setUpTranscodingJobs } = require("../transcoder");
 const { retrieveInstanceId, getInstanceId } = require("./getInstanceId");
 const getVideosInQueue = require("./getVideos");
 const removeVideosFromQueue = require("./removeVideos");
+require("dotenv").config();
+
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
 let internalQueue = [];
 let currentJobs = [];
@@ -27,10 +30,11 @@ const startJobs = async () => {
 
   internalQueue = [...data];
   const firstFiveVideos = internalQueue.slice(0, MAXIMUM_CONCURRENT_JOBS);
-  currentJobs = firstFiveVideos;
   //   internalQueue = internalQueue.filter((video) => !currentJobs.some((currentJob) => currentJob.video_id === video.video_id));
 
-  setUpTranscodingJobs(firstFiveVideos);
+  for (const video of firstFiveVideos) {
+    addJob(video);
+  }
   // get first five and set up transcoding tasks
 };
 
