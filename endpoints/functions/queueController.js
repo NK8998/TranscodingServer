@@ -1,5 +1,6 @@
 const { setUpTranscodingJobs } = require("../transcoder");
 const { retrieveInstanceId, getInstanceId } = require("./getInstanceId");
+const { createClient } = require("@supabase/supabase-js");
 const getVideosInQueue = require("./getVideos");
 const removeVideosFromQueue = require("./removeVideos");
 require("dotenv").config();
