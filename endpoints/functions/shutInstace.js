@@ -1,4 +1,5 @@
 const AWS = require("aws-sdk");
+const { retrieveInstanceId } = require("./getInstanceId");
 require("dotenv").config();
 
 let retries = 0;
@@ -6,7 +7,9 @@ const shutInstance = async () => {
   const ec2 = new AWS.EC2({ region: "ap-south-1" });
 
   try {
+    const thisInstanceId = retrieveInstanceId();
     const instanceId = process.env.INSTANCE_ID;
+    if (instanceId !== thisInstanceId) return;
 
     const instanceData = await ec2.describeInstances({ InstanceIds: [instanceId] }).promise();
     const state = instanceData.Reservations[0].Instances[0].State.Name;
