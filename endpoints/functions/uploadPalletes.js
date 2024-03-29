@@ -29,8 +29,8 @@ const uploadPalletes = async (videoPathDir, title) => {
     };
 
     try {
-      const uploadResponse = await s3.upload(params).promise();
-      const palleteUrl = uploadResponse.Location;
+      await s3.upload(params).promise();
+      const palleteUrl = `${process.env.CLOUDFRONT_URL}/${destinationPath}`;
       console.log(palleteUrl);
       return palleteUrl;
     } catch (err) {

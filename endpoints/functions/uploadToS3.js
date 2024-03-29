@@ -27,10 +27,9 @@ const uploadChunks = async (videoPathDir, title) => {
     };
 
     try {
-      const uploadResponse = await s3.upload(params).promise();
-
+      await s3.upload(params).promise();
       if (mpd) {
-        const mpdUrl = uploadResponse.Location;
+        const mpdUrl = `${process.env.CLOUDFRONT_URL}/${destinationPath}`;
         return mpdUrl;
       }
     } catch (err) {

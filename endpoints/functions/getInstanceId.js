@@ -1,8 +1,15 @@
 const { exec } = require("child_process");
-let instanceId;
+require("dotenv").config();
 
+let instanceId;
+const environment = "development";
 const getInstanceId = () => {
   return new Promise((resolve, reject) => {
+    if (environment === "development") {
+      instanceId = process.env.INSTANCE_ID;
+      resolve(instanceId);
+      return;
+    }
     const command =
       'TOKEN=`curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600"` \
 && curl -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/instance-id';
@@ -11,8 +18,8 @@ const getInstanceId = () => {
         console.error(`exec error: ${error}`);
         reject(error);
       } else {
-        resolve(stdout.trim());
         instanceId = stdout.trim();
+        resolve(stdout.trim());
       }
     });
   });

@@ -81,9 +81,8 @@ const uploadThumbnails = async (compressedThumbnailsDir, video_id) => {
     };
 
     try {
-      const uploadResponse = await s3.upload(params).promise();
-
-      const thumbnailUrl = uploadResponse.Location;
+      await s3.upload(params).promise();
+      const thumbnailUrl = `${process.env.CLOUDFRONT_URL}/${destinationPath}`;
       const thumbnailNum = `thumbnailUrl-${i}`;
       possibleThumbnailUrls[thumbnailNum] = thumbnailUrl;
     } catch (err) {

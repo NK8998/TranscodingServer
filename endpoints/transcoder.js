@@ -153,7 +153,7 @@ const generateMPDandUpload = async (video) => {
 
     const previewAdjustments = adjustFrameExtraction(duration);
 
-    await getPreviews(videoPath, videoPathDir, allResolutions, previewAdjustments);
+    await getPreviews(videoPath, videoPathDir, allResolutions, previewAdjustments, video_id);
 
     const possibleThumbnailsUrls = await extractThumbnails(videoPathDir, video_id);
 

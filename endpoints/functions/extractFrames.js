@@ -4,6 +4,7 @@ const fs = require("fs");
 const path = require("path");
 const { exec } = require("child_process");
 const { roundToEven } = require("./checkPresets");
+const uploadExtractedFrames = require("./uploadExtractedFrames");
 
 async function extractFrameFromBeginning(videoPath, extractedFramePath, mediumRes) {
   const { height, width } = mediumRes;
@@ -198,7 +199,7 @@ async function createPalette(extractedFramesDir, palletesDir, paletteSize, mediu
 //   }
 // }
 
-async function getPreviews(videoPath, videoPathDir, allResolutions, priviewAdjustments) {
+async function getPreviews(videoPath, videoPathDir, allResolutions, priviewAdjustments, video_id) {
   const { extractionRate, paletteSize } = priviewAdjustments;
   const extractedFramesDir = `${videoPathDir}/extractedFrames`;
   const compressedPalletesDir = `${videoPathDir}/compressedPalletes`;
@@ -212,6 +213,7 @@ async function getPreviews(videoPath, videoPathDir, allResolutions, priviewAdjus
   const mediumRes = { width: roundToEven(Math.floor(medWidth)), height: roundToEven(Math.floor(medHeight)) };
   try {
     await extractFrames(videoPath, extractedFramesDir, extractionRate, mediumRes);
+    await uploadExtractedFrames(extractedFramesDir, video_id);
     await createPalette(extractedFramesDir, palletesDir, paletteSize, mediumRes);
     await compressPalettes(palletesDir, compressedPalletesDir, mediumRes);
   } catch (err) {
