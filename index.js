@@ -5,31 +5,23 @@ require("dotenv").config();
 const maxStartupDelay = 1000;
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
-const subscribeToSupabase = () => {
+const subscribeToSupabase = new Promise((resolve, reject) => {
   const randomDelay = Math.floor(Math.random() * maxStartupDelay);
   console.log(randomDelay);
   setTimeout(() => {
-    const channel = supabase
-      .channel("video-queue")
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-        },
-        (payload) => {
-          console.log("guess what I fucking ran anyway!!!");
-          // setUpTranscodingJobs();
-          console.log(payload.new);
-          updateInternalQueue(payload.new);
-        }
-      )
+    supabase
+      .channel("room1")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "video-queue" }, (payload) => {
+        console.log("Change received!", payload);
+        updateInternalQueue(payload.new);
+      })
       .subscribe();
+    resolve();
   }, randomDelay);
-};
+});
 
 async function startInstaceJob() {
-  subscribeToSupabase();
+  await subscribeToSupabase;
   startJobs();
 }
 
