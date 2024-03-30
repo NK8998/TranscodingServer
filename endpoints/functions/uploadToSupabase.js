@@ -3,20 +3,8 @@ require("dotenv").config();
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
-const uploadToSupabase = async (
-  video_id,
-  resolutions,
-  previewAdjustments,
-  mpdUrl,
-  paletteUrls,
-  possibleThumbnailsUrls,
-  aspectRatio,
-  duration,
-  timestamp
-) => {
+const uploadToSupabase = async (video_id, resolutions, previewAdjustments, mpdUrl, paletteUrls, aspectRatio, duration, timestamp) => {
   console.log("uploading");
-  console.log(video_id, resolutions, previewAdjustments, mpdUrl, paletteUrls, possibleThumbnailsUrls, aspectRatio, duration, timestamp);
-
   try {
     const { data, error } = await supabase
       .from("video-metadata")
@@ -26,7 +14,6 @@ const uploadToSupabase = async (
           extraction_and_palette: previewAdjustments,
           mpd_url: mpdUrl,
           palette_urls: paletteUrls,
-          possible_thumbnail_urls: possibleThumbnailsUrls,
           aspect_ratio: aspectRatio,
           duration: duration,
           duration_timestamp: timestamp,

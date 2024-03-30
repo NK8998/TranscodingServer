@@ -155,7 +155,7 @@ const generateMPDandUpload = async (video) => {
 
     await getPreviews(videoPath, videoPathDir, allResolutions, previewAdjustments, video_id);
 
-    const possibleThumbnailsUrls = await extractThumbnails(videoPathDir, video_id);
+    await extractThumbnails(videoPathDir, video_id);
 
     await transcodeAndGenerateMpd(videoPath, videoPathDir, videoBitrateKbps, resolutions);
 
@@ -168,7 +168,7 @@ const generateMPDandUpload = async (video) => {
     const timestamp = getDurationStamp(Math.round(duration));
     // upload to supabase
 
-    await uploadToSupabase(video_id, resolutions, previewAdjustments, mpdUrl, paletteUrls, possibleThumbnailsUrls, aspectRatio, duration, timestamp);
+    await uploadToSupabase(video_id, resolutions, previewAdjustments, mpdUrl, paletteUrls, aspectRatio, duration, timestamp);
     fs.rmSync(videoPathDir, { recursive: true });
   } catch (error) {
     console.log(error);

@@ -4,6 +4,10 @@ const fs = require("fs");
 require("dotenv").config();
 const path = require("path");
 AWS.config.update({ region: "ap-south-1" });
+const { createClient } = require("@supabase/supabase-js");
+const { error } = require("console");
+
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
 const s3 = new AWS.S3({
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -102,7 +106,25 @@ const uploadThumbnails = async (compressedThumbnailsDir, video_id) => {
     i++;
   }
 
-  return possibleThumbnailUrls;
+  await uploadThumbnailsToSupabase(possibleThumbnailUrls, video_id);
 };
+
+async function uploadThumbnailsToSupabase(possibleThumbnailUrls, video_id) {
+  try {
+    const { data, error } = await supabase
+      .from("video-metadata")
+      .update([{ possible_thumbnail_urls: possibleThumbnailUrls }])
+      .eq("video_id", video_id)
+      .select();
+
+    if (error) {
+      console.error("something went wrong", error);
+      throw error;
+    }
+  } catch (error) {
+    console.error("Unexpected error occurred:", error);
+    throw error;
+  }
+}
 
 module.exports = extractThumbnails;
