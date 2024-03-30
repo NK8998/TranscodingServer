@@ -1,5 +1,5 @@
 const { setUpTranscodingJobs } = require("../transcoder");
-const { retrieveInstanceId, getInstanceId } = require("./getInstanceId");
+const { retrieveInstanceId } = require("./getInstanceId");
 const { createClient } = require("@supabase/supabase-js");
 const getVideosInQueue = require("./getVideos");
 const removeVideosFromQueue = require("./removeVideos");
@@ -26,7 +26,6 @@ const getCurrentJobs = () => {
 };
 
 const startJobs = async () => {
-  await getInstanceId();
   const data = await getVideosInQueue();
 
   internalQueue = [...data];

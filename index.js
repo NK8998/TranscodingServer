@@ -1,16 +1,19 @@
 const { createClient } = require("@supabase/supabase-js");
 const { updateInternalQueue, startJobs } = require("./endpoints/functions/queueController");
+const { getInstanceId, retrieveInstanceId } = require("./endpoints/functions/getInstanceId");
 require("dotenv").config();
 
 const maxStartupDelay = 1000;
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
 const subscribeToSupabase = new Promise((resolve, reject) => {
+  const instance_id = retrieveInstanceId();
+  console.log({ first: instance_id });
   const randomDelay = Math.floor(Math.random() * maxStartupDelay);
   console.log(randomDelay);
   setTimeout(() => {
     supabase
-      .channel("room1")
+      .channel(`${instance_id}`)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "video-queue" }, (payload) => {
         console.log("Change received!", payload);
         updateInternalQueue(payload.new);
@@ -21,6 +24,7 @@ const subscribeToSupabase = new Promise((resolve, reject) => {
 });
 
 async function startInstaceJob() {
+  await getInstanceId();
   await subscribeToSupabase;
   startJobs();
 }
