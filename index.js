@@ -24,7 +24,7 @@ const subscribeToSupabase = new Promise((resolve, reject) => {
 });
 
 async function startInstaceJob() {
-  await getInstanceId();
+  await getInstanceId;
   await subscribeToSupabase;
   startJobs();
 }
