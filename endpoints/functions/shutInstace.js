@@ -36,8 +36,8 @@ const stopInstance = async (instanceId) => {
 };
 const shutInstance = async () => {
   try {
-    const { retrieveInstanceId } = require("./getInstanceId");
-    const thisInstanceId = retrieveInstanceId();
+    const { getInstanceId } = require("./getInstanceId");
+    const thisInstanceId = await getInstanceId();
     const instanceId = process.env.INSTANCE_ID;
     if (instanceId !== thisInstanceId) {
       terminateInstance(thisInstanceId);

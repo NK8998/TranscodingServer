@@ -192,8 +192,8 @@ const setUpTranscodingJobs = async (data) => {
   const currentJobs = getCurrentJobs();
   if (currentJobs.length === 0 && data.length === 0) {
     isRunningFunction(false);
-    const { retrieveInstanceId } = require("./functions/getInstanceId");
-    const instance_id = retrieveInstanceId();
+    const { getInstanceId } = require("./functions/getInstanceId");
+    const instance_id = await getInstanceId();
     console.log("idling");
     console.log(instance_id);
     timeoutId = setTimeout(() => {
