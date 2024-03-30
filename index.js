@@ -7,7 +7,6 @@ const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY
 
 const subscribeToSupabase = new Promise((resolve, reject) => {
   const { retrieveInstanceId } = require("./endpoints/functions/getInstanceId");
-
   const instance_id = retrieveInstanceId();
   console.log({ first: instance_id });
   const randomDelay = Math.floor(Math.random() * maxStartupDelay);
