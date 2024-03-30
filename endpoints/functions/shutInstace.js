@@ -1,5 +1,4 @@
 const AWS = require("aws-sdk");
-const { retrieveInstanceId } = require("./getInstanceId");
 const checkRunningInstances = require("./checkRunningInstances");
 const { setUpTranscodingJobs } = require("../transcoder");
 require("dotenv").config();
@@ -37,6 +36,7 @@ const stopInstance = async (instanceId) => {
 };
 const shutInstance = async () => {
   try {
+    const { retrieveInstanceId } = require("./getInstanceId");
     const thisInstanceId = retrieveInstanceId();
     const instanceId = process.env.INSTANCE_ID;
     if (instanceId !== thisInstanceId) {
