@@ -32,6 +32,6 @@ async function startInstaceJob() {
 
 startInstaceJob();
 
-// git clone https://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@github.com/NK8998/TranscodingServer
+// git clone https://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@github.com/NK8998/TranscodingServer
 
 // token = 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;
