@@ -75,6 +75,7 @@ const transcodeAndGenerateMpd = async (videoPath, videoPathDir, videoBitrateKbps
         // Set the output manifest
         command.output(outputManifest);
         command.outputOptions([
+          "-crf 28",
           "-f dash", // Output format as DASH
           // '-single_file 1',
         ]);
