@@ -5,7 +5,6 @@ require("dotenv").config();
 const path = require("path");
 AWS.config.update({ region: "ap-south-1" });
 const { createClient } = require("@supabase/supabase-js");
-const { error } = require("console");
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 

@@ -2,7 +2,7 @@ const { exec } = require("child_process");
 require("dotenv").config();
 
 let instanceId;
-const environment = "prod";
+const environment = "development";
 const getInstanceId = async () => {
   if (environment === "development") {
     const instance_id = await new Promise((resolve, reject) => {

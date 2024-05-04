@@ -17,6 +17,7 @@ const extractThumbnails = require("./functions/extractThumbnails");
 const uploadToSupabase = require("./functions/uploadToSupabase");
 const getDurationStamp = require("./functions/getDurationStamp");
 const shutInstance = require("./functions/shutInstace");
+const transcodeDownloadables = require("./functions/transcodeDownloadables");
 
 require("dotenv").config();
 ffmpeg.setFfmpegPath(require("ffmpeg-static"));
@@ -150,7 +151,7 @@ const generateMPDandUpload = async (video) => {
 
     const resolutions = getResolutions(inputResolution);
 
-    const allResolutions = getAllResolutions(inputResolution);
+    const allResolutions = getAllResolutions(inputResolution); // for getting the correct pallete aspect ratio
 
     const previewAdjustments = adjustFrameExtraction(duration);
 
@@ -170,6 +171,8 @@ const generateMPDandUpload = async (video) => {
     // upload to supabase
 
     await uploadToSupabase(video_id, resolutions, previewAdjustments, mpdUrl, paletteUrls, aspectRatio, duration, timestamp);
+
+    await transcodeDownloadables(videoPath, videoPathDir, resolutions, inputResolution, video_id);
     fs.rmSync(videoPathDir, { recursive: true });
   } catch (error) {
     console.log(error);

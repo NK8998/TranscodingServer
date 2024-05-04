@@ -17,7 +17,7 @@ const uploadToSupabase = async (video_id, resolutions, previewAdjustments, mpdUr
           aspect_ratio: aspectRatio,
           duration: duration,
           duration_timestamp: timestamp,
-          type: duration <= 60 ? "short" : "video",
+          type: duration <= 60 && aspectRatio < 0.57 ? "short" : "video",
         },
       ])
       .eq("video_id", video_id)
