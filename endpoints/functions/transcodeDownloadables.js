@@ -31,11 +31,7 @@ const transcodeDownloadables = async (videoPath, videoPathDir, resolutions, inpu
         .audioBitrate("128k")
         .size(`${resolution.width}x${resolution.height}`)
         .videoBitrate(`${resolution.bitrate}k`)
-        .outputOptions([
-          "-profile:v baseline", // Set the profile to 'baseline' for better compatibility
-          "-level:v 3.0", // Set the level to '3.0'
-          "-crf 30",
-        ])
+        .outputOptions(["-pix_fmt yuv420p", "-crf 30"])
         .on("progress", (progress) => {
           if (progress && progress.percent) {
             console.log(`Progress: ${progress.percent.toFixed(2)}%`);
