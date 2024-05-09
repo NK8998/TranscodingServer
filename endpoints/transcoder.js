@@ -68,6 +68,8 @@ const transcodeAndGenerateMpd = async (videoPath, videoPathDir, videoBitrateKbps
           command
             .addOption(`-map 0:v:0`)
             .addOption(`-c:v:${index} libx264`)
+            .addOption(`-profile:v:${index} baseline`) // Set the profile to 'baseline'
+            .addOption(`-level:v:${index} 3.0`) // Set the level to '3.0'
             .addOption(`-b:v:${index} ${resolution.bitrate}k`)
             .addOption(`-s:v:${index} ${resolution.width}x${resolution.height}`)
             .addOption(`-g:v:${index} ${resolution.framerate}`);
