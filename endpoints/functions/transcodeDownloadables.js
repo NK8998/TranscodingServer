@@ -31,7 +31,7 @@ const transcodeDownloadables = async (videoPath, videoPathDir, resolutions, inpu
         .audioBitrate("128k")
         .size(`${resolution.width}x${resolution.height}`)
         .videoBitrate(`${resolution.bitrate}k`)
-        .outputOptions("-crf 31")
+        .outputOptions("-crf 30")
         .output(`${downloadablesDir}/video-${resolution.height}.mp4`)
         .on("start", () => {
           console.log("Starting DASH transcoding...");
