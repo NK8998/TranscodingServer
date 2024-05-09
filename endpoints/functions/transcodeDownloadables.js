@@ -31,7 +31,11 @@ const transcodeDownloadables = async (videoPath, videoPathDir, resolutions, inpu
         .audioBitrate("128k")
         .size(`${resolution.width}x${resolution.height}`)
         .videoBitrate(`${resolution.bitrate}k`)
-        .outputOptions(["-pix_fmt yuv420p", "-crf 30"])
+        .outputOptions(["-crf 30", "-pix_fmt yuv420p"])
+        .output(`${downloadablesDir}/video-${resolution.height}.mp4`)
+        .on("start", () => {
+          console.log("Starting DASH transcoding...");
+        })
         .on("progress", (progress) => {
           if (progress && progress.percent) {
             console.log(`Progress: ${progress.percent.toFixed(2)}%`);
