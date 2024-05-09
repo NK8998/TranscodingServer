@@ -32,7 +32,7 @@ const transcodeDownloadables = async (videoPath, videoPathDir, resolutions, inpu
         .size(`${resolution.width}x${resolution.height}`)
         .videoBitrate(`${resolution.bitrate}k`)
         .outputOptions([
-          "-profile:v baseline", // Set the profile to 'baseline'
+          "-profile:v baseline", // Set the profile to 'baseline' for better compatibility
           "-level:v 3.0", // Set the level to '3.0'
           "-crf 30",
         ])
