@@ -61,13 +61,13 @@ const transcodeAndGenerateMpd = async (videoPath, videoPathDir, videoBitrateKbps
         const command = ffmpeg(videoPath)
           .addOption("-map 0:a:0") // Include audio stream from input
           .addOption("-c:a:0 aac") // Audio codec for all representations
-          .addOption("-b:a:0 128k"); // Audio bitrate for all representations
+          .addOption("-q:a 0"); // Same quality level for audio
 
         // Dynamically add video options for each resolution
         finalResolutions.forEach((resolution, index) => {
           command
             .addOption(`-map 0:v:0`)
-            .addOption(`-c:v:${index} libx264`)
+            .addOption(`-c:v:${index} libvpx-vp9`) // Use VP9 codec to see if quality improves
             .addOption(`-b:v:${index} ${resolution.bitrate}k`)
             .addOption(`-s:v:${index} ${resolution.width}x${resolution.height}`)
             .addOption(`-g:v:${index} ${resolution.framerate}`);
