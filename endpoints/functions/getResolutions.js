@@ -3,14 +3,14 @@ const { checkPresets } = require("./checkPresets");
 const getResolutions = (inputResolution) => {
   // Resolutions presets to include in the DASH manifest
   const AllResolutions = [
-    { width: 3840, height: 2160, bitrate: 5000, tag: "2160p", supersript: "4k", framerate: inputResolution.framerate, referenceHeight: 2160 },
-    { width: 2560, height: 1440, bitrate: 4000, tag: "1440p", supersript: "HD", framerate: inputResolution.framerate, referenceHeight: 1440 },
-    { width: 1920, height: 1080, bitrate: 3000, tag: "1080p", supersript: "HD", framerate: inputResolution.framerate, referenceHeight: 1080 },
-    { width: 1280, height: 720, bitrate: 2000, tag: "720p", supersript: "", framerate: inputResolution.framerate, referenceHeight: 720 },
+    { width: 3840, height: 2160, bitrate: 6000, tag: "2160p", supersript: "4k", framerate: inputResolution.framerate, referenceHeight: 2160 },
+    { width: 2560, height: 1440, bitrate: 5000, tag: "1440p", supersript: "HD", framerate: inputResolution.framerate, referenceHeight: 1440 },
+    { width: 1920, height: 1080, bitrate: 3500, tag: "1080p", supersript: "HD", framerate: inputResolution.framerate, referenceHeight: 1080 },
+    { width: 1280, height: 720, bitrate: 2500, tag: "720p", supersript: "", framerate: inputResolution.framerate, referenceHeight: 720 },
     {
       width: 854,
       height: 480,
-      bitrate: 1000,
+      bitrate: 1500,
       tag: "480p",
       supersript: "",
       framerate: inputResolution.framerate > 30 ? 30 : inputResolution.framerate,
@@ -19,7 +19,7 @@ const getResolutions = (inputResolution) => {
     {
       width: 640,
       height: 360,
-      bitrate: 800,
+      bitrate: 1000,
       tag: "360p",
       supersript: "",
       framerate: inputResolution.framerate > 30 ? 30 : inputResolution.framerate,
@@ -28,7 +28,7 @@ const getResolutions = (inputResolution) => {
     {
       width: 426,
       height: 240,
-      bitrate: 400,
+      bitrate: 500,
       tag: "240p",
       supersript: "",
       framerate: inputResolution.framerate > 30 ? 30 : inputResolution.framerate,
@@ -37,7 +37,7 @@ const getResolutions = (inputResolution) => {
     {
       width: 256,
       height: 144,
-      bitrate: 200,
+      bitrate: 250,
       tag: "144p",
       supersript: "",
       framerate: inputResolution.framerate > 30 ? 30 : inputResolution.framerate,
