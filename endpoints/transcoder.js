@@ -173,7 +173,7 @@ const generateMPDandUpload = async (video) => {
 
     await uploadToSupabase(video_id, resolutions, previewAdjustments, mpdUrl, paletteUrls, aspectRatio, duration, timestamp);
 
-    await transcodeDownloadables(videoPath, videoPathDir, resolutions, inputResolution, video_id);
+    await transcodeDownloadables(videoPath, videoPathDir, resolutions, video_id);
     fs.rmSync(videoPathDir, { recursive: true });
   } catch (error) {
     console.log(error);

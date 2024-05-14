@@ -17,10 +17,13 @@ const s3 = new AWS.S3({
   },
 });
 
-const transcodeDownloadables = async (videoPath, videoPathDir, resolutions, inputResolution, video_id) => {
+const transcodeDownloadables = async (videoPath, videoPathDir, resolutions, video_id) => {
   const downloadablesDir = `${videoPathDir}/downloadables`;
   await fs.promises.mkdir(downloadablesDir, { recursive: true });
-  const downloadableRes = resolutions.filter((res) => res.height <= inputResolution.height);
+  // downloadables should push only res.referenceHeight if it is either 2160 or 1080 or 720 or 360
+  const downloadableRes = resolutions.filter((res) => {
+    return res.referenceHeight === 2160 || res.referenceHeight === 1080 || res.referenceHeight === 720 || res.referenceHeight === 360;
+  });
 
   // Dynamically add video options for each resolution
   const transcodePromises = downloadableRes.map((resolution) => {
