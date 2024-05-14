@@ -67,6 +67,7 @@ function adjustPresets(inputResolution, allResolutions, presetToChange) {
         framerate: preset.framerate,
         tag: preset.tag,
         supersript: preset.supersript,
+        referenceHeight: preset.referenceHeight,
       };
     });
   }
@@ -82,6 +83,7 @@ function adjustPresets(inputResolution, allResolutions, presetToChange) {
         framerate: preset.framerate,
         tag: preset.tag,
         supersript: preset.supersript,
+        referenceHeight: preset.referenceHeight,
       };
     });
   }
@@ -123,6 +125,7 @@ function useSpecialPresets(inputResolution, allResolutions, presetToChange) {
       framerate: preset.framerate,
       tag: preset.tag,
       supersript: preset.supersript,
+      referenceHeight: preset.referenceHeight,
     };
   });
 

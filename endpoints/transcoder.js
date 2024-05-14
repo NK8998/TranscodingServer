@@ -67,7 +67,7 @@ const transcodeAndGenerateMpd = async (videoPath, videoPathDir, videoBitrateKbps
         finalResolutions.forEach((resolution, index) => {
           command
             .addOption(`-map 0:v:0`)
-            .addOption(`-c:v:${index} libvpx-vp9`) // Use VP9 codec to see if quality improves
+            .addOption(`-c:v:${index} libx264`) // Use h264 codec for faster transcoding
             .addOption(`-b:v:${index} ${resolution.bitrate}k`)
             .addOption(`-s:v:${index} ${resolution.width}x${resolution.height}`)
             .addOption(`-g:v:${index} ${resolution.framerate}`);
