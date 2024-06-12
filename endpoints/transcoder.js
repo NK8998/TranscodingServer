@@ -60,7 +60,7 @@ const transcodeAndGenerateMpd = async (videoPath, videoPathDir, videoBitrateKbps
       return new Promise((resolve, reject) => {
         const command = ffmpeg(videoPath)
           .addOption("-map 0:a:0") // Include audio stream from input
-          .addOption("-q:a 2") // Same quality level for audio
+          .addOption("-q:a 2") // reduce audio quality a notch
           .audioCodec("libmp3lame");
 
         // Dynamically add video options for each resolution
