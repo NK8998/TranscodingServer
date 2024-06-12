@@ -31,7 +31,7 @@ const transcodeDownloadables = async (videoPath, videoPathDir, resolutions, vide
       ffmpeg(videoPath)
         .videoCodec("libx264")
         .audioCodec("libmp3lame")
-        .addOption("-q:a 2") // reduce audio quality a notch
+        .addOption("-q:a 0") // Same quality level for audio
         .size(`${resolution.width}x${resolution.height}`)
         .videoBitrate(`${resolution.bitrate}k`)
         .outputOptions(["-crf 30", "-pix_fmt yuv420p"])

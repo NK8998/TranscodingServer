@@ -55,19 +55,18 @@ const transcodeAndGenerateMpd = async (videoPath, videoPathDir, videoBitrateKbps
     console.log(finalResolutions);
 
     // Create an FFmpeg command
-
     const generateMPDandChunks = () => {
       return new Promise((resolve, reject) => {
         const command = ffmpeg(videoPath)
           .addOption("-map 0:a:0") // Include audio stream from input
-          .addOption("-q:a 2") // reduce audio quality a notch
-          .audioCodec("libmp3lame");
+          .addOption("-c:a:0 aac") // Audio codec for all representations
+          .addOption("-q:a 0"); // Same quality level for audio
 
         // Dynamically add video options for each resolution
         finalResolutions.forEach((resolution, index) => {
           command
             .addOption(`-map 0:v:0`)
-            .addOption(`-c:v:${index} libx264`) // Use h264 codec for faster transcoding
+            .addOption(`-c:v:${index} libvpx-vp9`) // Use h264 codec for faster transcoding
             .addOption(`-b:v:${index} ${resolution.bitrate}k`)
             .addOption(`-s:v:${index} ${resolution.width}x${resolution.height}`)
             .addOption(`-g:v:${index} ${resolution.framerate}`);
@@ -76,7 +75,7 @@ const transcodeAndGenerateMpd = async (videoPath, videoPathDir, videoBitrateKbps
         // Set the output manifest
         command.output(outputManifest);
         command.outputOptions([
-          "-crf 26",
+          "-crf 28",
           "-f dash", // Output format as DASH
           "-pix_fmt yuv420p",
           // '-single_file 1',
