@@ -213,7 +213,7 @@ async function getPreviews(videoPath, videoPathDir, allResolutions, priviewAdjus
   const mediumRes = { width: roundToEven(Math.floor(medWidth)), height: roundToEven(Math.floor(medHeight)) };
   try {
     await extractFrames(videoPath, extractedFramesDir, extractionRate, mediumRes);
-    await uploadExtractedFrames(extractedFramesDir, video_id);
+    // await uploadExtractedFrames(extractedFramesDir, video_id);
     await createPalette(extractedFramesDir, palletesDir, paletteSize, mediumRes);
     await compressPalettes(palletesDir, compressedPalletesDir, mediumRes);
   } catch (err) {
