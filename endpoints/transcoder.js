@@ -70,7 +70,7 @@ const transcodeAndGenerateMpd = async (videoPath, videoPathDir, videoBitrateKbps
             .addOption(`-c:v:${index} libx264`) // Use h264 codec for faster transcoding
             .addOption(`-b:v:${index} ${resolution.bitrate}k`)
             .addOption(`-s:v:${index} ${resolution.width}x${resolution.height}`)
-            .addOption(`-g:v:${index} ${resolution.framerate}`);
+            .addOption(`-r:v:${index} ${resolution.framerate}`);
         });
 
         // Set the output manifest
