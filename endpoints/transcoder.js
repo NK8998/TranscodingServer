@@ -18,6 +18,7 @@ const uploadToSupabase = require("./functions/uploadToSupabase");
 const getDurationStamp = require("./functions/getDurationStamp");
 const shutInstance = require("./functions/shutInstace");
 const transcodeDownloadables = require("./functions/transcodeDownloadables");
+const getVideoDimesions = require("./functions/getVideoDimesions");
 
 require("dotenv").config();
 ffmpeg.setFfmpegPath(require("ffmpeg-static"));
@@ -143,10 +144,9 @@ const generateMPDandUpload = async (video) => {
     const videoPath = await downloadVideo(video);
     const videoPathDir = path.dirname(videoPath);
 
-    const videoInfo = await getVideoInfo(videoPath);
-    console.log(videoInfo);
+    const { framerate, duration, videoBitrateKbps } = await getVideoInfo(videoPath);
 
-    const { width, height, framerate, duration, videoBitrateKbps } = videoInfo;
+    const { width, height } = getVideoDimesions(videoPath, videoPathDir);
 
     const inputResolution = { width: width, height: height, framerate: framerate };
 
