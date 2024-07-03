@@ -4,6 +4,7 @@ const { exec } = require("child_process");
 
 const getVideoDimesions = async (videoPath, videoPathDir) => {
   const dimensionFrameDir = `${videoPathDir}/dimensionFrame`;
+
   fs.mkdirSync(dimensionFrameDir, { recursive: true });
 
   const dimensions = await new Promise((resolve, reject) => {

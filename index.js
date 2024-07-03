@@ -1,12 +1,13 @@
 const { createClient } = require("@supabase/supabase-js");
 const { updateInternalQueue, startJobs } = require("./endpoints/functions/queueController");
 require("dotenv").config();
+const { getInstanceId, getEnvironment } = require("./endpoints/functions/getInstanceId");
+const environment = getEnvironment();
 
 const maxStartupDelay = 1000;
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
 const subscribeToSupabase = new Promise(async (resolve, reject) => {
-  const { getInstanceId } = require("./endpoints/functions/getInstanceId");
   const instance_id = await getInstanceId();
   console.log({ first: instance_id });
   const randomDelay = Math.floor(Math.random() * maxStartupDelay);
@@ -24,9 +25,13 @@ const subscribeToSupabase = new Promise(async (resolve, reject) => {
 });
 
 async function startInstaceJob() {
-  const { getInstanceId } = require("./endpoints/functions/getInstanceId");
   await getInstanceId();
-  await subscribeToSupabase;
+  if (environment === "prod") {
+    await subscribeToSupabase;
+  } else if (environment === "dev") {
+    updateInternalQueue({ video_id: "testing", instance_id: process.env.INSTANCE_ID });
+  }
+
   startJobs();
 }
 

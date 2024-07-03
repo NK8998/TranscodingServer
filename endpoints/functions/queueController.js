@@ -1,9 +1,10 @@
 const { setUpTranscodingJobs } = require("../transcoder");
-const { retrieveInstanceId } = require("./getInstanceId");
+const { retrieveInstanceId, getEnvironment } = require("./getInstanceId");
 const { createClient } = require("@supabase/supabase-js");
 const getVideosInQueue = require("./getVideos");
 const removeVideosFromQueue = require("./removeVideos");
 require("dotenv").config();
+const environment = getEnvironment();
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
@@ -26,6 +27,12 @@ const getCurrentJobs = () => {
 };
 
 const startJobs = async () => {
+  if (environment === "dev") {
+    currentJobs.push(...internalQueue);
+    setUpTranscodingJobs(internalQueue);
+    console.log(internalQueue, "setting up jobs");
+    return;
+  }
   const data = await getVideosInQueue();
 
   internalQueue = [...data];

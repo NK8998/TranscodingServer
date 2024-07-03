@@ -19,6 +19,9 @@ const getDurationStamp = require("./functions/getDurationStamp");
 const shutInstance = require("./functions/shutInstace");
 const transcodeDownloadables = require("./functions/transcodeDownloadables");
 const getVideoDimesions = require("./functions/getVideoDimesions");
+const { getInstanceId, getEnvironment } = require("./functions/getInstanceId");
+
+const environment = getEnvironment();
 
 require("dotenv").config();
 ffmpeg.setFfmpegPath(require("ffmpeg-static"));
@@ -42,7 +45,7 @@ const transcodeAndGenerateMpd = async (videoPath, videoPathDir, videoBitrateKbps
     // Check if the output folder exists, if not, create it
     const finalResolutions = resolutions.map((resolution, index) => {
       const length = resolutions.length;
-      const calculatedBitrate = Math.round(videoBitrateKbps - index * (videoBitrateKbps / length));
+      const calculatedBitrate = Math.max(Math.round(videoBitrateKbps - index * (videoBitrateKbps / length)), 50);
 
       return {
         ...resolution,
@@ -114,6 +117,12 @@ const transcodeAndGenerateMpd = async (videoPath, videoPathDir, videoBitrateKbps
 };
 
 const downloadVideo = async (video) => {
+  if (environment === "dev") {
+    return new Promise((resolve, reject) => {
+      const videoPath = `./test_video_folder/test.mkv`;
+      resolve(videoPath);
+    });
+  }
   console.log(video);
   const params = {
     Bucket: process.env.AWS_UNPROCESSED_BUCKET_NAME, // replace with your bucket name
@@ -125,7 +134,6 @@ const downloadVideo = async (video) => {
         console.error(err);
         reject(err);
       } else {
-        const scriptDirectory = __dirname;
         const folderName = `./folder${video.video_id}`;
         if (!fs.existsSync(folderName)) {
           fs.mkdirSync(folderName, { recursive: true });
@@ -146,13 +154,15 @@ const generateMPDandUpload = async (video) => {
 
     const { framerate, duration, videoBitrateKbps } = await getVideoInfo(videoPath);
 
-    const { width, height } = getVideoDimesions(videoPath, videoPathDir);
+    const { width, height } = await getVideoDimesions(videoPath, videoPathDir);
 
     const inputResolution = { width: width, height: height, framerate: framerate };
 
     const resolutions = getResolutions(inputResolution);
 
     const allResolutions = getAllResolutions(inputResolution); // for getting the correct pallete aspect ratio
+
+    console.log({ width, height, framerate, duration, videoBitrateKbps, resolutions, allResolutions });
 
     const previewAdjustments = adjustFrameExtraction(duration);
 
@@ -197,7 +207,6 @@ const setUpTranscodingJobs = async (data) => {
   const currentJobs = getCurrentJobs();
   if (currentJobs.length === 0 && data.length === 0) {
     isRunningFunction(false);
-    const { getInstanceId } = require("./functions/getInstanceId");
     const instance_id = await getInstanceId();
     console.log("idling");
     console.log(instance_id);

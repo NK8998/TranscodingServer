@@ -4,7 +4,7 @@ require("dotenv").config();
 let instanceId;
 const environment = "prod";
 const getInstanceId = async () => {
-  if (environment === "development") {
+  if (environment === "dev") {
     const instance_id = await new Promise((resolve, reject) => {
       instanceId = process.env.INSTANCE_ID;
       resolve(instanceId);
@@ -35,4 +35,8 @@ const retrieveInstanceId = () => {
   return instanceId;
 };
 
-module.exports = { getInstanceId, retrieveInstanceId };
+const getEnvironment = () => {
+  return environment;
+};
+
+module.exports = { getInstanceId, retrieveInstanceId, getEnvironment };
