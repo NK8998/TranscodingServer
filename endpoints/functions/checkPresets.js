@@ -47,15 +47,6 @@ function roundToEven(value) {
   return value % 2 === 0 ? value : value - 1;
 }
 
-// Function to check the presets and adjust them if necessary
-function checkPresets(inputResolution, specialPresets) {
-  // Check which dimension of the input resolution matches the presets
-  const presetToChange = checkResolution(inputResolution, specialPresets);
-
-  const resolutions = useSpecialPresets(inputResolution, specialPresets, presetToChange);
-  return resolutions;
-}
-
 function useSpecialPresets(inputResolution, specialPresets, presetToChange) {
   // Calculate the aspect ratio
   const aspectRatio = calculateAspectRatio(inputResolution);
@@ -71,7 +62,7 @@ function useSpecialPresets(inputResolution, specialPresets, presetToChange) {
     if (newWidth > preset.width) {
       // If it exceeds then we simply set it equal to its width
       newWidth = preset.width;
-      newHeight = Math.floor(newWidth * (1 / aspectRatio));
+      newHeight = Math.floor(newWidth / aspectRatio);
     }
     return {
       width: roundToEven(newWidth),
@@ -84,6 +75,15 @@ function useSpecialPresets(inputResolution, specialPresets, presetToChange) {
   });
 
   return specialResolutions;
+}
+
+// Function to check the presets and adjust them
+function checkPresets(inputResolution, specialPresets) {
+  // Check which dimension of the input resolution matches the presets
+  const presetToChange = checkResolution(inputResolution, specialPresets);
+
+  const resolutions = useSpecialPresets(inputResolution, specialPresets, presetToChange);
+  return resolutions;
 }
 
 // Define the input resolution and all possible resolutions
