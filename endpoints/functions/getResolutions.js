@@ -2,7 +2,7 @@ const { checkPresets } = require("./checkPresets");
 
 const getResolutions = (inputResolution) => {
   // Resolutions presets to include in the DASH manifest
-  const AllResolutions = [
+  const specialPresets = [
     { width: 3840, height: 2160, bitrate: 6000, tag: "2160p", supersript: "4k", framerate: inputResolution.framerate, referenceHeight: 2160 },
     { width: 2560, height: 1440, bitrate: 5000, tag: "1440p", supersript: "HD", framerate: inputResolution.framerate, referenceHeight: 1440 },
     { width: 1920, height: 1080, bitrate: 3500, tag: "1080p", supersript: "HD", framerate: inputResolution.framerate, referenceHeight: 1080 },
@@ -45,7 +45,7 @@ const getResolutions = (inputResolution) => {
     },
     // Add more resolutions as needed
   ];
-  let resolutions = checkPresets(inputResolution, AllResolutions);
+  let resolutions = checkPresets(inputResolution, specialPresets);
   // High res is anything like 1440p and above
   const hasHighRes = resolutions.find((res) => res.referenceHeight > 1080);
   if (!hasHighRes) {
@@ -55,7 +55,7 @@ const getResolutions = (inputResolution) => {
 };
 
 const getAllResolutions = (inputResolution) => {
-  const AllResolutions = [
+  const specialPresets = [
     { width: 3840, height: 2160, bitrate: 4000, tag: "2160p", supersript: "4k", referenceHeight: 2160 },
     { width: 2560, height: 1440, bitrate: 3000, tag: "1440p", supersript: "HD", referenceHeight: 1440 },
     { width: 1920, height: 1080, bitrate: 2500, tag: "1080p", supersript: "HD", referenceHeight: 1080 },
@@ -66,7 +66,7 @@ const getAllResolutions = (inputResolution) => {
     { width: 256, height: 144, bitrate: 200, tag: "144p", supersript: "", referenceHeight: 144 },
     // Add more resolutions as needed
   ];
-  const resolutions = checkPresets(inputResolution, AllResolutions);
+  const resolutions = checkPresets(inputResolution, specialPresets);
   return resolutions;
 };
 
