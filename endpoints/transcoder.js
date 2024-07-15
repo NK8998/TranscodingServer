@@ -52,7 +52,7 @@ const transcodeAndGenerateMpd = async (videoPath, videoPathDir, videoBitrateKbps
         // Limit framerate to 30 for resolutions <= 480
         framerate: resolution.height <= 480 ? Math.min(resolution.framerate, 30) : resolution.framerate,
         // Update bitrate if necessary
-        bitrate: Math.min(resolution.bitrate, videoBitrateKbps, calculatedBitrate),
+        bitrate: calculatedBitrate,
       };
     });
 
@@ -71,7 +71,7 @@ const transcodeAndGenerateMpd = async (videoPath, videoPathDir, videoBitrateKbps
         finalResolutions.forEach((resolution, index) => {
           command
             .addOption(`-map 0:v:0`)
-            .addOption(`-c:v:${index} libvpx-vp9`) // Use vp9 codec for faster transcoding
+            .addOption(`-c:v:${index} libx264`) // Use h264 codec
             .addOption(`-b:v:${index} ${resolution.bitrate}k`)
             .addOption(`-s:v:${index} ${resolution.width}x${resolution.height}`)
             .addOption(`-r:v:${index} ${resolution.framerate}`);
