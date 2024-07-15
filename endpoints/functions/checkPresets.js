@@ -71,6 +71,7 @@ function useSpecialPresets(inputResolution, specialPresets, presetToChange) {
       framerate: preset.framerate,
       tag: preset.tag,
       supersript: preset.supersript,
+      referenceHeight: preset.referenceHeight,
     };
   });
 

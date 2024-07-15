@@ -22,7 +22,9 @@ const transcodeDownloadables = async (videoPath, videoPathDir, resolutions, vide
   await fs.promises.mkdir(downloadablesDir, { recursive: true });
   // downloadables should push only res.referenceHeight if it is either 2160 or 1080 or 720 or 360
   const downloadableRes = resolutions.filter((res) => {
-    return res.referenceHeight === 2160 || res.referenceHeight === 1080 || res.referenceHeight === 720 || res.referenceHeight === 360;
+    if (res.referenceHeight === 2160 || res.referenceHeight === 1080 || res.referenceHeight === 720 || res.referenceHeight === 360) {
+      return res;
+    }
   });
 
   // Dynamically add video options for each resolution
