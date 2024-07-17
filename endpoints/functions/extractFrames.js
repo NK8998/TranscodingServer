@@ -94,14 +94,14 @@ async function compressPalettes(palletesDir, compressedPalletesDir, mediumRes) {
           const stats = await fs.promises.stat(outputFilePath);
           const fileSizeInBytes = stats.size;
 
-          if (fileSizeInBytes < 90 * 1024) {
+          if (fileSizeInBytes < 45 * 1024) {
             compressed = true;
             console.log(`Compressed and saved ${outputFilePath}`);
           } else {
             quality -= 5;
-            if (quality <= 40) {
+            if (quality <= 20) {
               compressed = true; // Stop the loop
-              console.log(`Could not compress ${file} below 90KB without excessive quality loss.`);
+              console.log(`Could not compress ${file} below 45KB without excessive quality loss.`);
             }
           }
         }
