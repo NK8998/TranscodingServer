@@ -37,9 +37,9 @@ async function startInstaceJob() {
 
 startInstaceJob();
 
-// git clone https://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@github.com/NK8998/TranscodingServer
+// git clone https://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@github.com/NK8998/TranscodingServer
 
-// token = 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;
+// token = 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;
 
 // live streaming code.
 // const express = require("express");
