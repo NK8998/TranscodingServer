@@ -1,10 +1,9 @@
-const { createClient } = require("@supabase/supabase-js");
 const { retrieveInstanceId } = require("./getInstanceId");
 require("dotenv").config();
-
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+const supabaseServices = require("../SDKs/supabase");
 
 const getVideosInQueue = async () => {
+  const { supabase } = await supabaseServices();
   const instanceId = retrieveInstanceId();
 
   const videosInQueue = supabase

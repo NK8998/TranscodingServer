@@ -4,42 +4,57 @@ const fs = require("fs");
 require("dotenv").config();
 const path = require("path");
 AWS.config.update({ region: "ap-south-1" });
-const { createClient } = require("@supabase/supabase-js");
+const getSecrets = require("../secrets/secrets");
+const AWSServices = require("../SDKs/AWS");
+const supabaseServices = require("../SDKs/supabase");
 
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
-
-const s3 = new AWS.S3({
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  maxRetries: 10, // Maximum number of retry attempts for failed requests
-  httpOptions: {
-    timeout: 120000, // Request timeout in milliseconds
-  },
-});
-
-const extractThumbnails = async (videoPathDir, video_id) => {
+const extractThumbnails = async (
+  videoPathDir,
+  video_id
+) => {
   const extractedFramesDir = `${videoPathDir}/extractedFrames`;
   const compressedThumbnailsDir = `${videoPathDir}/compressedThumbnails`;
-  await fs.promises.mkdir(compressedThumbnailsDir, { recursive: true });
+  await fs.promises.mkdir(compressedThumbnailsDir, {
+    recursive: true,
+  });
 
-  const files = await fs.promises.readdir(extractedFramesDir);
+  const files = await fs.promises.readdir(
+    extractedFramesDir
+  );
 
   const firstThumb = files[1];
   const secondThumb = files[Math.round(files.length / 2)];
   const thirdThumb = files[files.length - 2];
   const thumbnails = [firstThumb, secondThumb, thirdThumb];
   thumbnailPromises = thumbnails.map((thumbnail) => {
-    return compressThumbnails(compressedThumbnailsDir, extractedFramesDir, thumbnail);
+    return compressThumbnails(
+      compressedThumbnailsDir,
+      extractedFramesDir,
+      thumbnail
+    );
   });
   await Promise.all(thumbnailPromises);
-  const possibleThumbnailUrls = await uploadThumbnails(compressedThumbnailsDir, video_id);
+  const possibleThumbnailUrls = await uploadThumbnails(
+    compressedThumbnailsDir,
+    video_id
+  );
 
   return possibleThumbnailUrls;
 };
 
-const compressThumbnails = async (compressedThumbnailsDir, extractedFramesDir, thumbnail) => {
-  const inputFilePath = path.join(extractedFramesDir, thumbnail);
-  let outputFilePath = path.join(compressedThumbnailsDir, thumbnail);
+const compressThumbnails = async (
+  compressedThumbnailsDir,
+  extractedFramesDir,
+  thumbnail
+) => {
+  const inputFilePath = path.join(
+    extractedFramesDir,
+    thumbnail
+  );
+  let outputFilePath = path.join(
+    compressedThumbnailsDir,
+    thumbnail
+  );
 
   return new Promise(async (resolve, reject) => {
     try {
@@ -47,19 +62,27 @@ const compressThumbnails = async (compressedThumbnailsDir, extractedFramesDir, t
       let quality = 80; // Starting quality
 
       while (!compressed) {
-        await sharp(inputFilePath).jpeg({ quality, progressive: true }).toFile(outputFilePath);
+        await sharp(inputFilePath)
+          .jpeg({ quality, progressive: true })
+          .toFile(outputFilePath);
 
-        const stats = await fs.promises.stat(outputFilePath);
+        const stats = await fs.promises.stat(
+          outputFilePath
+        );
         const fileSizeInBytes = stats.size;
 
         if (fileSizeInBytes < 30 * 1024) {
           compressed = true;
-          console.log(`Compressed and saved ${outputFilePath}`);
+          console.log(
+            `Compressed and saved ${outputFilePath}`
+          );
         } else {
           quality -= 5;
           if (quality <= 0) {
             compressed = true; // Stop the loop
-            console.log(`Could not compress ${file} below 7KB without excessive quality loss.`);
+            console.log(
+              `Could not compress ${file} below 7KB without excessive quality loss.`
+            );
           }
         }
       }
@@ -70,13 +93,18 @@ const compressThumbnails = async (compressedThumbnailsDir, extractedFramesDir, t
   });
 };
 
-const uploadThumbnails = async (compressedThumbnailsDir, video_id) => {
+const uploadThumbnails = async (
+  compressedThumbnailsDir,
+  video_id
+) => {
   let possibleThumbnailUrls = {};
   async function uploadFile(filePath, destinationPath, i) {
+    const secrets = await getSecrets();
+    const { s3 } = await AWSServices();
     const fileData = fs.readFileSync(filePath);
 
     const params = {
-      Bucket: process.env.AWS_S3_BUCKET_NAME,
+      Bucket: secrets.AWS_PROCESSED_BUCKET,
       Key: destinationPath,
       Body: fileData,
       PartSize: 5 * 1024 * 1024,
@@ -85,7 +113,7 @@ const uploadThumbnails = async (compressedThumbnailsDir, video_id) => {
 
     try {
       await s3.upload(params).promise();
-      const thumbnailUrl = `${process.env.CLOUDFRONT_URL}/${destinationPath}`;
+      const thumbnailUrl = `${secrets.CLOUDFRONT_URL_VIDEO_DATA}/${destinationPath}`;
       const thumbnailNum = `thumbnailUrl-${i}`;
       possibleThumbnailUrls[thumbnailNum] = thumbnailUrl;
     } catch (err) {
@@ -94,25 +122,39 @@ const uploadThumbnails = async (compressedThumbnailsDir, video_id) => {
     }
   }
 
-  const files = await fs.promises.readdir(compressedThumbnailsDir);
+  const files = await fs.promises.readdir(
+    compressedThumbnailsDir
+  );
 
   let i = 0;
   for (const file of files) {
     const destinationPath = `${video_id}/possible_thumbnails/${file}`;
-    const filePath = path.join(compressedThumbnailsDir, file);
+    const filePath = path.join(
+      compressedThumbnailsDir,
+      file
+    );
 
     await uploadFile(filePath, destinationPath, i);
     i++;
   }
 
-  await uploadThumbnailsToSupabase(possibleThumbnailUrls, video_id);
+  await uploadThumbnailsToSupabase(
+    possibleThumbnailUrls,
+    video_id
+  );
 };
 
-async function uploadThumbnailsToSupabase(possibleThumbnailUrls, video_id) {
+async function uploadThumbnailsToSupabase(
+  possibleThumbnailUrls,
+  video_id
+) {
+  const { supabase } = await supabaseServices();
   try {
     const { data, error } = await supabase
       .from("video-metadata")
-      .update([{ possible_thumbnail_urls: possibleThumbnailUrls }])
+      .update([
+        { possible_thumbnail_urls: possibleThumbnailUrls },
+      ])
       .eq("video_id", video_id)
       .select();
 

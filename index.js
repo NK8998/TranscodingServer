@@ -1,41 +1,72 @@
-const { createClient } = require("@supabase/supabase-js");
-const { updateInternalQueue, startJobs } = require("./endpoints/functions/queueController");
+const {
+  updateInternalQueue,
+  startJobs,
+} = require("./endpoints/functions/queueController");
 require("dotenv").config();
-const { getInstanceId, getEnvironment } = require("./endpoints/functions/getInstanceId");
+const {
+  getInstanceId,
+  getEnvironment,
+} = require("./endpoints/functions/getInstanceId");
+const getSecrets = require("./endpoints/secrets/secrets");
+const supabaseServices = require("./endpoints/SDKs/supabase");
 const environment = getEnvironment();
 
 const maxStartupDelay = 1000;
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
-const subscribeToSupabase = new Promise(async (resolve, reject) => {
-  const instance_id = await getInstanceId();
-  console.log({ first: instance_id });
-  const randomDelay = Math.floor(Math.random() * maxStartupDelay);
-  console.log(randomDelay);
-  setTimeout(() => {
-    supabase
-      .channel(`${instance_id}`)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "video-queue" }, (payload) => {
-        console.log("Change received!", payload);
-        updateInternalQueue(payload.new);
-      })
-      .subscribe();
-    resolve();
-  }, randomDelay);
-});
+const subscribeToSupabase = async () => {
+  return new Promise(async (resolve, reject) => {
+    const { supabase } = await supabaseServices();
 
-async function startInstaceJob() {
+    const instance_id = await getInstanceId();
+    console.log({ first: instance_id });
+    const randomDelay = Math.floor(
+      Math.random() * maxStartupDelay
+    );
+    console.log(randomDelay);
+    setTimeout(() => {
+      supabase
+        .channel(`${instance_id}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "video-queue",
+          },
+          (payload) => {
+            console.log("Change received!", payload);
+            updateInternalQueue(payload.new);
+          }
+        )
+        .subscribe();
+      resolve();
+    }, randomDelay);
+  });
+};
+
+async function startInstaceJobs() {
+  const secrets = await getSecrets();
+  console.log(secrets);
+
   await getInstanceId();
+
   if (environment === "prod") {
-    await subscribeToSupabase;
+    await subscribeToSupabase();
   } else if (environment === "dev") {
-    updateInternalQueue({ video_id: "testing", instance_id: process.env.INSTANCE_ID });
+    updateInternalQueue({
+      video_id: "testing",
+      instance_id: secrets.AWS_ORIGINAL_INSTANCE_ID,
+    });
   }
 
   startJobs();
 }
 
-startInstaceJob();
+const initiateInstance = async () => {
+  startInstaceJobs();
+};
+
+initiateInstance();
 
 // git clone https://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@github.com/NK8998/TranscodingServer
 

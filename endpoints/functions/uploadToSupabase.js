@@ -1,9 +1,16 @@
-const { createClient } = require("@supabase/supabase-js");
-require("dotenv").config();
+const supabaseServices = require("../SDKs/supabase");
 
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
-
-const uploadToSupabase = async (video_id, resolutions, previewAdjustments, mpdUrl, paletteUrls, aspectRatio, duration, timestamp) => {
+const uploadToSupabase = async (
+  video_id,
+  resolutions,
+  previewAdjustments,
+  mpdUrl,
+  paletteUrls,
+  aspectRatio,
+  duration,
+  timestamp
+) => {
+  const { supabase } = await supabaseServices();
   console.log("uploading");
   try {
     const { data, error } = await supabase
@@ -17,7 +24,10 @@ const uploadToSupabase = async (video_id, resolutions, previewAdjustments, mpdUr
           aspect_ratio: aspectRatio,
           duration: duration,
           duration_timestamp: timestamp,
-          type: duration <= 60 && aspectRatio < 0.57 ? "short" : "video",
+          type:
+            duration <= 60 && aspectRatio < 0.57
+              ? "short"
+              : "video",
         },
       ])
       .eq("video_id", video_id)

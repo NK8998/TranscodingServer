@@ -3,25 +3,25 @@ const path = require("path");
 const fs = require("fs");
 require("dotenv").config();
 AWS.config.update({ region: "ap-south-1" });
-
 const { createClient } = require("@supabase/supabase-js");
+const getSecrets = require("../secrets/secrets");
+const supabaseServices = require("../SDKs/supabase");
+const AWSServices = require("../SDKs/AWS");
 
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
-
-const s3 = new AWS.S3({
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  maxRetries: 10, // Maximum number of retry attempts for failed requests
-  httpOptions: {
-    timeout: 120000, // Request timeout in milliseconds
-  },
-});
-
-const uploadFramesUrlToSupabase = async (extractedFramesUrls, video_id) => {
+const uploadFramesUrlToSupabase = async (
+  extractedFramesUrls,
+  video_id
+) => {
+  const { supabase } = await supabaseServices();
   try {
     const { data, error } = await supabase
       .from("video-categorization")
-      .insert([{ extracted_frames_urls: extractedFramesUrls, video_id: video_id }])
+      .insert([
+        {
+          extracted_frames_urls: extractedFramesUrls,
+          video_id: video_id,
+        },
+      ])
       .select();
 
     if (error) {
@@ -37,14 +37,20 @@ const uploadFramesUrlToSupabase = async (extractedFramesUrls, video_id) => {
   }
 };
 
-const uploadExtractedFrames = async (extractedFramesDir, video_id) => {
+const uploadExtractedFrames = async (
+  extractedFramesDir,
+  video_id
+) => {
+  const secrets = await getSecrets();
+  const { s3 } = await AWSServices();
+
   let extractedFramesUrls = {};
 
   async function uploadFile(filePath, destinationPath, i) {
     const fileData = fs.readFileSync(filePath);
 
     const params = {
-      Bucket: process.env.AWS_S3_BUCKET_NAME,
+      Bucket: secrets.AWS_PROCESSED_BUCKET,
       Key: destinationPath,
       Body: fileData,
       PartSize: 5 * 1024 * 1024,
@@ -53,7 +59,7 @@ const uploadExtractedFrames = async (extractedFramesDir, video_id) => {
 
     try {
       await s3.upload(params).promise();
-      const frameUrl = `${process.env.CLOUDFRONT_URL}/${destinationPath}`;
+      const frameUrl = `${secrets.CLOUDFRONT_URL_VIDEO_DATA}/${destinationPath}`;
       console.log(frameUrl);
       return frameUrl;
     } catch (err) {
@@ -62,7 +68,9 @@ const uploadExtractedFrames = async (extractedFramesDir, video_id) => {
     }
   }
 
-  const files = await fs.promises.readdir(extractedFramesDir);
+  const files = await fs.promises.readdir(
+    extractedFramesDir
+  );
   const uploadPromises = files.map((file, i) => {
     const filePath = path.join(extractedFramesDir, file);
     const destination = `${video_id}/extractedFrames/${file}`;
@@ -75,7 +83,10 @@ const uploadExtractedFrames = async (extractedFramesDir, video_id) => {
     extractedFramesUrls[FrameNum] = url;
   });
 
-  await uploadFramesUrlToSupabase(extractedFramesUrls, video_id);
+  await uploadFramesUrlToSupabase(
+    extractedFramesUrls,
+    video_id
+  );
 };
 
 module.exports = uploadExtractedFrames;

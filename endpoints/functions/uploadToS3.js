@@ -1,25 +1,23 @@
-const AWS = require("aws-sdk");
 const path = require("path");
 const fs = require("fs");
+const getSecrets = require("../secrets/secrets");
+const AWSServices = require("../SDKs/AWS");
 require("dotenv").config();
-AWS.config.update({ region: "ap-south-1" });
-
-const s3 = new AWS.S3({
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  maxRetries: 10, // Maximum number of retry attempts for failed requests
-  httpOptions: {
-    timeout: 120000, // Request timeout in milliseconds
-  },
-});
 
 const uploadChunks = async (videoPathDir, title) => {
   const chunksDirectory = `${videoPathDir}/MPDOutput`;
-  async function uploadFile(filePath, destinationPath, mpd) {
+  async function uploadFile(
+    filePath,
+    destinationPath,
+    mpd
+  ) {
+    const secrets = await getSecrets();
+
+    const { s3 } = await AWSServices();
     const fileData = fs.readFileSync(filePath);
 
     const params = {
-      Bucket: process.env.AWS_S3_BUCKET_NAME,
+      Bucket: secrets.AWS_PROCESSED_BUCKET,
       Key: destinationPath,
       Body: fileData,
       PartSize: 5 * 1024 * 1024,
@@ -29,7 +27,7 @@ const uploadChunks = async (videoPathDir, title) => {
     try {
       await s3.upload(params).promise();
       if (mpd) {
-        const mpdUrl = `${process.env.CLOUDFRONT_URL}/${destinationPath}`;
+        const mpdUrl = `${secrets.CLOUDFRONT_URL_VIDEO_DATA}/${destinationPath}`;
         return mpdUrl;
       }
     } catch (err) {
@@ -39,10 +37,14 @@ const uploadChunks = async (videoPathDir, title) => {
   }
 
   try {
-    const files = await fs.promises.readdir(chunksDirectory);
+    const files = await fs.promises.readdir(
+      chunksDirectory
+    );
 
     // Filter out .mpd files
-    const mpdFiles = files.filter((file) => file.endsWith(".mpd"));
+    const mpdFiles = files.filter((file) =>
+      file.endsWith(".mpd")
+    );
 
     if (mpdFiles.length === 0) {
       console.log("No .mpd files found in the directory.");
@@ -54,7 +56,11 @@ const uploadChunks = async (videoPathDir, title) => {
     const mpdFilePath = path.join(chunksDirectory, mpdFile);
     const destinationPath = `${title}/chunks/${mpdFile}`;
     let mpd = true;
-    const mpdUrl = await uploadFile(mpdFilePath, destinationPath, mpd);
+    const mpdUrl = await uploadFile(
+      mpdFilePath,
+      destinationPath,
+      mpd
+    );
 
     // Create an array of promises for concurrent uploads
     mpd = false;

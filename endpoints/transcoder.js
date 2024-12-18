@@ -1,16 +1,20 @@
-// const { createClient } = require('@supabase/supabase-js');
-const AWS = require("aws-sdk");
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
 const ffmpeg = require("fluent-ffmpeg");
-const ffprobePath = require("@ffprobe-installer/ffprobe").path;
+const ffprobePath =
+  require("@ffprobe-installer/ffprobe").path;
 ffmpeg.setFfprobePath(ffprobePath);
 const getVideoInfo = require("./functions/getVideoInfo");
 const uploadChunks = require("./functions/uploadToS3");
-const { isRunningFunction } = require("./functions/isRunning");
+const {
+  isRunningFunction,
+} = require("./functions/isRunning");
 const getPreviews = require("./functions/extractFrames");
-const { getResolutions, getAllResolutions } = require("./functions/getResolutions");
+const {
+  getResolutions,
+  getAllResolutions,
+} = require("./functions/getResolutions");
 const uploadPalletes = require("./functions/uploadPalletes");
 const adjustFrameExtraction = require("./functions/adjustFrameExtraction");
 const extractThumbnails = require("./functions/extractThumbnails");
@@ -19,42 +23,55 @@ const getDurationStamp = require("./functions/getDurationStamp");
 const shutInstance = require("./functions/shutInstace");
 const transcodeDownloadables = require("./functions/transcodeDownloadables");
 const getVideoDimesions = require("./functions/getVideoDimesions");
-const { getInstanceId, getEnvironment } = require("./functions/getInstanceId");
-
-const environment = getEnvironment();
-
+const {
+  getInstanceId,
+  getEnvironment,
+} = require("./functions/getInstanceId");
+const getSecrets = require("./secrets/secrets");
+const AWSServices = require("./SDKs/AWS");
 require("dotenv").config();
 ffmpeg.setFfmpegPath(require("ffmpeg-static"));
 
-AWS.config.update({ region: "ap-south-1" });
+const environment = getEnvironment();
 
-const s3 = new AWS.S3({
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  maxRetries: 10, // Maximum number of retry attempts for failed requests
-  httpOptions: {
-    timeout: 120000, // Request timeout in milliseconds
-  },
-});
-
-const transcodeAndGenerateMpd = async (videoPath, videoPathDir, videoBitrateKbps, resolutions) => {
+const transcodeAndGenerateMpd = async (
+  videoPath,
+  videoPathDir,
+  videoBitrateKbps,
+  resolutions
+) => {
   try {
     const MpdOutput = `${videoPathDir}/MPDOutput`;
     fs.mkdirSync(MpdOutput, { recursive: true });
     const outputManifest = `${MpdOutput}/output.mpd`;
     // Check if the output folder exists, if not, create it
-    const finalResolutions = resolutions.map((resolution, index) => {
-      const length = resolutions.length;
-      const calculatedBitrate = Math.max(Math.round(videoBitrateKbps - index * (videoBitrateKbps / length)), 50);
+    const finalResolutions = resolutions.map(
+      (resolution, index) => {
+        const length = resolutions.length;
+        const calculatedBitrate = Math.max(
+          Math.round(
+            videoBitrateKbps -
+              index * (videoBitrateKbps / length)
+          ),
+          50
+        );
 
-      return {
-        ...resolution,
-        // Limit framerate to 30 for resolutions <= 480
-        framerate: resolution.height <= 480 ? Math.min(resolution.framerate, 30) : resolution.framerate,
-        // Update bitrate if necessary
-        bitrate: Math.min(calculatedBitrate, resolution.bitrate, videoBitrateKbps),
-      };
-    });
+        return {
+          ...resolution,
+          // Limit framerate to 30 for resolutions <= 480
+          framerate:
+            resolution.height <= 480
+              ? Math.min(resolution.framerate, 30)
+              : resolution.framerate,
+          // Update bitrate if necessary
+          bitrate: Math.min(
+            calculatedBitrate,
+            resolution.bitrate,
+            videoBitrateKbps
+          ),
+        };
+      }
+    );
 
     console.log(finalResolutions);
 
@@ -72,9 +89,15 @@ const transcodeAndGenerateMpd = async (videoPath, videoPathDir, videoBitrateKbps
           command
             .addOption(`-map 0:v:0`)
             .addOption(`-c:v:${index} libx264`) // Use h264 codec
-            .addOption(`-b:v:${index} ${resolution.bitrate}k`)
-            .addOption(`-s:v:${index} ${resolution.width}x${resolution.height}`)
-            .addOption(`-r:v:${index} ${resolution.framerate}`);
+            .addOption(
+              `-b:v:${index} ${resolution.bitrate}k`
+            )
+            .addOption(
+              `-s:v:${index} ${resolution.width}x${resolution.height}`
+            )
+            .addOption(
+              `-r:v:${index} ${resolution.framerate}`
+            );
         });
 
         // Set the output manifest
@@ -93,7 +116,9 @@ const transcodeAndGenerateMpd = async (videoPath, videoPathDir, videoBitrateKbps
           })
           .on("progress", (progress) => {
             if (progress && progress.percent) {
-              console.log(`Progress: ${progress.percent.toFixed(2)}%`);
+              console.log(
+                `Progress: ${progress.percent.toFixed(2)}%`
+              );
             }
           })
           .on("error", (err, stdout, stderr) => {
@@ -117,6 +142,9 @@ const transcodeAndGenerateMpd = async (videoPath, videoPathDir, videoBitrateKbps
 };
 
 const downloadVideo = async (video) => {
+  const secrets = await getSecrets();
+  const { s3 } = await AWSServices();
+
   if (environment === "dev") {
     return new Promise((resolve, reject) => {
       const videoPath = `./test_video_folder/test.mkv`;
@@ -125,7 +153,7 @@ const downloadVideo = async (video) => {
   }
   console.log(video);
   const params = {
-    Bucket: process.env.AWS_UNPROCESSED_BUCKET_NAME, // replace with your bucket name
+    Bucket: secrets.AWS_S3_UNPROCESSED_BUCKET, // replace with your bucket name
     Key: video.video_id,
   };
   return new Promise((resolve, reject) => {
@@ -152,38 +180,90 @@ const generateMPDandUpload = async (video) => {
     const videoPath = await downloadVideo(video);
     const videoPathDir = path.dirname(videoPath);
 
-    const { framerate, duration, videoBitrateKbps } = await getVideoInfo(videoPath);
+    const { framerate, duration, videoBitrateKbps } =
+      await getVideoInfo(videoPath);
 
-    const { width, height } = await getVideoDimesions(videoPath, videoPathDir);
+    const { width, height } = await getVideoDimesions(
+      videoPath,
+      videoPathDir
+    );
 
-    const inputResolution = { width: width, height: height, framerate: framerate };
+    const inputResolution = {
+      width: width,
+      height: height,
+      framerate: framerate,
+    };
 
     const resolutions = getResolutions(inputResolution);
 
-    const allResolutions = getAllResolutions(inputResolution); // for getting the correct pallete aspect ratio
+    const allResolutions =
+      getAllResolutions(inputResolution); // for getting the correct pallete aspect ratio
 
-    console.log({ width, height, framerate, duration, videoBitrateKbps, resolutions, allResolutions });
+    console.log({
+      width,
+      height,
+      framerate,
+      duration,
+      videoBitrateKbps,
+      resolutions,
+      allResolutions,
+    });
 
-    const previewAdjustments = adjustFrameExtraction(duration);
+    const previewAdjustments =
+      adjustFrameExtraction(duration);
 
-    await getPreviews(videoPath, videoPathDir, allResolutions, previewAdjustments, video_id);
+    await getPreviews(
+      videoPath,
+      videoPathDir,
+      allResolutions,
+      previewAdjustments,
+      video_id
+    );
 
     await extractThumbnails(videoPathDir, video_id);
 
-    await transcodeAndGenerateMpd(videoPath, videoPathDir, videoBitrateKbps, resolutions);
+    await transcodeAndGenerateMpd(
+      videoPath,
+      videoPathDir,
+      videoBitrateKbps,
+      resolutions
+    );
 
-    const mpdUrl = await uploadChunks(videoPathDir, video_id);
+    const mpdUrl = await uploadChunks(
+      videoPathDir,
+      video_id
+    );
 
-    const paletteUrls = await uploadPalletes(videoPathDir, video_id);
+    const paletteUrls = await uploadPalletes(
+      videoPathDir,
+      video_id
+    );
 
-    const aspectRatio = Math.round((width / height) * 1000) / 1000;
+    const aspectRatio =
+      Math.round((width / height) * 1000) / 1000;
 
-    const timestamp = getDurationStamp(Math.round(duration));
+    const timestamp = getDurationStamp(
+      Math.round(duration)
+    );
     // upload to supabase
 
-    await uploadToSupabase(video_id, resolutions, previewAdjustments, mpdUrl, paletteUrls, aspectRatio, duration, timestamp);
+    await uploadToSupabase(
+      video_id,
+      resolutions,
+      previewAdjustments,
+      mpdUrl,
+      paletteUrls,
+      aspectRatio,
+      duration,
+      timestamp
+    );
 
-    await transcodeDownloadables(videoPath, videoPathDir, resolutions, video_id);
+    await transcodeDownloadables(
+      videoPath,
+      videoPathDir,
+      resolutions,
+      video_id
+    );
     fs.rmSync(videoPathDir, { recursive: true });
   } catch (error) {
     console.log(error);
@@ -203,7 +283,9 @@ const setUpTranscodingJobs = async (data) => {
   }
   console.log("running");
   isRunningFunction(true);
-  const { getCurrentJobs } = require("./functions/queueController");
+  const {
+    getCurrentJobs,
+  } = require("./functions/queueController");
   const currentJobs = getCurrentJobs();
   if (currentJobs.length === 0 && data.length === 0) {
     isRunningFunction(false);
@@ -222,10 +304,17 @@ const setUpTranscodingJobs = async (data) => {
   const setUpJob = async (video) => {
     try {
       await generateMPDandUpload(video);
-      const { removeJob } = require("./functions/queueController");
+      const {
+        removeJob,
+      } = require("./functions/queueController");
       await removeJob(video);
     } catch (err) {
-      console.error("Error in setUpJob for video:", video, "Error:", err);
+      console.error(
+        "Error in setUpJob for video:",
+        video,
+        "Error:",
+        err
+      );
       // Handle error appropriately here
     }
   };
@@ -233,23 +322,9 @@ const setUpTranscodingJobs = async (data) => {
   for (const video of data) {
     setUpJob(video);
   }
-
-  // const transcodingPromises = queuedVideos.map((video) => {
-  //   return new Promise(async (resolve, reject) => {
-  //     try {
-  //       const result = await generateMPDandUpload(video);
-  //       resolve(result);
-  //     } catch (error) {
-  //       console.error(`Error processing video ${video.video_id}: ${error}`);
-  //       resolve(null); // Resolve with null on error
-  //       // update the error field in video-metadata table and inform user.
-  //     }
-  //   });
-  // });
-  // await Promise.all(transcodingPromises);
-  // await removeVideosFromQueue(queuedVideos);
-
-  // setUpTranscodingJobs();
 };
 
-module.exports = { setUpTranscodingJobs, generateMPDandUpload };
+module.exports = {
+  setUpTranscodingJobs,
+  generateMPDandUpload,
+};

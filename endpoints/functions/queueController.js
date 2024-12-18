@@ -1,12 +1,13 @@
 const { setUpTranscodingJobs } = require("../transcoder");
-const { retrieveInstanceId, getEnvironment } = require("./getInstanceId");
-const { createClient } = require("@supabase/supabase-js");
+const {
+  retrieveInstanceId,
+  getEnvironment,
+} = require("./getInstanceId");
 const getVideosInQueue = require("./getVideos");
 const removeVideosFromQueue = require("./removeVideos");
+const supabaseServices = require("../SDKs/supabase");
 require("dotenv").config();
 const environment = getEnvironment();
-
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
 let internalQueue = [];
 let currentJobs = [];
@@ -36,7 +37,10 @@ const startJobs = async () => {
   const data = await getVideosInQueue();
 
   internalQueue = [...data];
-  const firstFiveVideos = internalQueue.slice(0, MAXIMUM_CONCURRENT_JOBS);
+  const firstFiveVideos = internalQueue.slice(
+    0,
+    MAXIMUM_CONCURRENT_JOBS
+  );
   //   internalQueue = internalQueue.filter((video) => !currentJobs.some((currentJob) => currentJob.video_id === video.video_id));
 
   for (const video of firstFiveVideos) {
@@ -56,10 +60,18 @@ async function addJob(videoToAdd) {
     // Add the new video to currentJobs
     currentJobs.push(videoToAdd);
 
+    const { supabase } = await supabaseServices();
+
     // Update the state of the video to "processing"
-    const { error: updateError } = await supabase.from("video-queue").update({ state: "processing" }).eq("video_id", videoToAdd.video_id);
+    const { error: updateError } = await supabase
+      .from("video-queue")
+      .update({ state: "processing" })
+      .eq("video_id", videoToAdd.video_id);
     if (updateError) {
-      console.error("Error updating video state: ", updateError);
+      console.error(
+        "Error updating video state: ",
+        updateError
+      );
       return;
     }
   }
@@ -92,14 +104,29 @@ async function addJob(videoToAdd) {
 
 async function removeJob(videoToRemove) {
   // remove a task from the queue and add another one
-  internalQueue = internalQueue.filter((task) => task.video_id === videoToRemove.video_id);
-  const videoToAdd = internalQueue.find((video) => !currentJobs.some((currentJob) => currentJob.video_id === video.video_id));
+  internalQueue = internalQueue.filter(
+    (task) => task.video_id === videoToRemove.video_id
+  );
+  const videoToAdd = internalQueue.find(
+    (video) =>
+      !currentJobs.some(
+        (currentJob) =>
+          currentJob.video_id === video.video_id
+      )
+  );
 
   // remove done video from currentJobs
-  currentJobs = currentJobs.filter((video) => video.video_id !== videoToRemove.video_id);
+  currentJobs = currentJobs.filter(
+    (video) => video.video_id !== videoToRemove.video_id
+  );
   await removeVideosFromQueue([videoToRemove]);
 
   addJob(videoToAdd);
 }
 
-module.exports = { updateInternalQueue, getCurrentJobs, startJobs, removeJob };
+module.exports = {
+  updateInternalQueue,
+  getCurrentJobs,
+  startJobs,
+  removeJob,
+};

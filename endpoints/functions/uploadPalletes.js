@@ -1,27 +1,22 @@
 const AWS = require("aws-sdk");
 const path = require("path");
 const fs = require("fs");
+const getSecrets = require("../secrets/secrets");
+const AWSServices = require("../SDKs/AWS");
 require("dotenv").config();
-AWS.config.update({ region: "ap-south-1" });
-
-const s3 = new AWS.S3({
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  maxRetries: 10, // Maximum number of retry attempts for failed requests
-  httpOptions: {
-    timeout: 120000, // Request timeout in milliseconds
-  },
-});
 
 const uploadPalletes = async (videoPathDir, title) => {
   const palletesDir = `${videoPathDir}/compressedPalletes`;
   let palleteUrls = {};
 
+  const secrets = await getSecrets();
+
+  const { s3 } = await AWSServices();
   async function uploadFile(filePath, destinationPath, i) {
     const fileData = fs.readFileSync(filePath);
 
     const params = {
-      Bucket: process.env.AWS_S3_BUCKET_NAME,
+      Bucket: secrets.AWS_PROCESSED_BUCKET,
       Key: destinationPath,
       Body: fileData,
       PartSize: 5 * 1024 * 1024,
@@ -30,7 +25,7 @@ const uploadPalletes = async (videoPathDir, title) => {
 
     try {
       await s3.upload(params).promise();
-      const palleteUrl = `${process.env.CLOUDFRONT_URL}/${destinationPath}`;
+      const palleteUrl = `${secrets.CLOUDFRONT_URL_VIDEO_DATA}/${destinationPath}`;
       console.log(palleteUrl);
       return palleteUrl;
     } catch (err) {
