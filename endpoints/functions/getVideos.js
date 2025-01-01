@@ -10,7 +10,6 @@ const getVideosInQueue = async () => {
     .from("video-queue")
     .select("*")
     .eq("state", "unprocessed")
-    .eq("instance_id", instanceId) // Add this line
     .order("time_added", { ascending: true });
 
   const { data, error } = await videosInQueue;
