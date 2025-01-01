@@ -11,7 +11,7 @@ const getSecrets = require("./endpoints/secrets/secrets");
 const supabaseServices = require("./endpoints/SDKs/supabase");
 const environment = getEnvironment();
 
-const maxStartupDelay = 1000;
+const maxStartupDelay = 1500;
 
 const subscribeToSupabase = async () => {
   return new Promise(async (resolve, reject) => {
@@ -19,9 +19,7 @@ const subscribeToSupabase = async () => {
 
     const instance_id = await getInstanceId();
     console.log({ first: instance_id });
-    const randomDelay = Math.floor(
-      Math.random() * maxStartupDelay
-    );
+    const randomDelay = Math.floor(Math.random() * maxStartupDelay);
     console.log(randomDelay);
     setTimeout(() => {
       supabase
@@ -46,11 +44,14 @@ const subscribeToSupabase = async () => {
 
 async function startInstaceJobs() {
   const secrets = await getSecrets();
+  const instance_id = await getInstanceId();
+
   console.log(secrets);
-
-  await getInstanceId();
-
-  if (environment === "prod") {
+  if (
+    environment === "prod" &&
+    instance_id !== secrets.AWS_ORIGINAL_INSTANCE_ID
+  ) {
+    // the only instances that should be running are the ones in the auto scaling group
     await subscribeToSupabase();
   } else if (environment === "dev") {
     updateInternalQueue({
